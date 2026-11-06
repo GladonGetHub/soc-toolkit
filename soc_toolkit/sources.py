@@ -46,7 +46,7 @@ def _failed(name, r, err, link=""):
     if r is None:
         return Result(name, None, "Lookup failed (no connection)", link, error=err)
     if r.status_code == 401 or r.status_code == 403:
-        return Result(name, None, "API key rejected, check it in .env", link, error=str(r.status_code))
+        return Result(name, None, "API key rejected, check the key is correct", link, error=str(r.status_code))
     if r.status_code == 429:
         return Result(name, None, "Rate limit reached, try again later", link, error="429")
     return Result(name, None, f"Error {r.status_code}", link, error=r.text[:200])
@@ -367,7 +367,8 @@ class CIRCLHashlookup:
 
 
 # ---------------------------------------------------------------------- Demo
-# Sample answers for practice. Uses the IOCs from the TWP Splunk project.
+# Sample answers with no internet needed. Used by the tests.
+# Uses the IOCs from the TWP Splunk project.
 DEMO_DATA = {
     "194.165.16.11": (95, "APT command-and-control server"),
     "45.129.56.200": (90, "Financial malware C2"),

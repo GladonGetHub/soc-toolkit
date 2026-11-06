@@ -55,7 +55,7 @@ A score of `None` means "no data" or "no opinion", and it doesn't pull the verdi
 
 **Error handling:** if a service is down, rate-limited (429) or rejects the key (401/403), the result says so in plain English and the other sources carry on.
 
-**Demo** returns sample answers for the IPs from the TWP Splunk project, so the app works before you have keys.
+**Demo** returns sample answers for the IPs from the TWP Splunk project. The tests use it, because it needs no internet.
 
 ## 3. `verdict()`: one word per indicator
 
@@ -73,22 +73,33 @@ The page also shows **"Flagged by: 3 of 5"**: how many sources scored it Malicio
 
 Why the highest and not the average? If one trusted source says "this is a known C2 server", an average with two "no data" answers would hide it. In a SOC you'd rather check a false alarm than miss a real one.
 
-## 4. `config.py`: keeping keys secret
+## 4. `config.py`: keeping keys secret, and picking the mode
 
-API keys are like passwords. They live in a `.env` file that `.gitignore` keeps off GitHub. `load_dotenv()` reads that file when the app starts. No keys means demo mode.
+API keys are like passwords. They live in a `.env` file that `.gitignore` keeps off GitHub. `load_dotenv()` reads that file when the app starts.
+
+The same code runs in two places, and `is_public()` tells them apart with one question: *does this server have any keys?*
+
+- **Yes: private mode.** It's your own machine. Every source with a key is switched on and there are no limits.
+- **No: public mode.** It's the public website. Everyone gets the free no-key sources, and each visitor can paste their own keys into the sidebar.
+
+Think of it like a library computer. Anyone can sit down and use the free catalogue, but to get into a paid database you log in with your own card, and you're logged out when you leave. Nobody uses the librarian's card.
+
+Visitor keys live in `st.session_state`, which belongs to one browser tab and disappears when it closes. They're never written to disk.
+
+The public version also has limits, 10 indicators per lookup and 50 per session, so one visitor can't use up the free services for everyone else.
 
 ## 5. `pages/1_IOC_Enrichment.py`: the screen
 
 Streamlit turns a Python script into a web page. Every time you click something, the script runs again from the top. Two tricks handle that:
 
-- **`@st.cache_data(ttl=3600)`** remembers each lookup for an hour, so clicking around doesn't burn your API quota.
+- **`@st.cache_data(ttl=3600)`** remembers each lookup for an hour, so clicking around doesn't burn your API quota. On the public site the cache is shared by all visitors, so the cache key includes a one-way fingerprint (SHA-256) of the visitor's keys. A visitor without a VirusTotal key can never be handed a result that someone else's VirusTotal key paid for. The keys themselves are passed as `_keys`; the leading underscore tells Streamlit not to store them.
 - **`st.session_state`** keeps the results on screen between reruns.
 
 The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait 60 seconds after every 4 lookups.
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 20 checks: refanging, type detection, internal ranges, de-duplication, verdict thresholds, demo mode, and how we read each source's response. The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 24 checks: refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 
@@ -106,6 +117,9 @@ False positives waste analyst time. GreyNoise and CIRCL help you close noise qui
 
 **What if two sources disagree?**
 The highest score wins, and the "flagged by" count shows how strong the agreement is. The analyst then opens the details to judge.
+
+**How do you stop people abusing the public version?**
+There are no keys of mine on the server, so there's nothing of mine to steal or use up. Visitors bring their own keys, and there are limits per lookup and per session.
 
 **What would you add next?**
 Bulk import from a CSV, and saving results to a case.

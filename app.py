@@ -17,14 +17,14 @@ st.write(
     "checking indicators, triaging phishing, reading logs and handing over shifts."
 )
 
-_, demo_mode = build_providers()
-if demo_mode:
+providers, public = build_providers()
+if public:
     st.info(
-        "**Demo mode.** No API keys found, so lookups use sample data. "
-        "Add your keys to a `.env` file to use live threat intelligence (see README)."
+        "**Public version.** The free sources work straight away with no sign-up. "
+        "To switch on all 9 sources, add your own free API keys in the IOC Enrichment sidebar."
     )
 else:
-    st.success("Live mode: API keys loaded.")
+    st.success(f"Private mode: your API keys are loaded, {len(providers)} sources switched on.")
 
 st.subheader("Modules")
 modules = [
@@ -40,3 +40,4 @@ modules = [
 st.dataframe([{"#": n, "Module": m, "What it does": d, "Status": s} for n, m, d, s in modules], hide_index=True)
 
 st.caption("Open a ready module from the sidebar on the left.")
+st.caption("Source code: [github.com/GladonGetHub/soc-toolkit](https://github.com/GladonGetHub/soc-toolkit)")

@@ -2,18 +2,22 @@
 Module 1: IOC Enrichment
 
 Paste indicators (IPs, domains, URLs, hashes), even defanged ones, and get
-one verdict per indicator from every threat-intel source that has an API key
-set, plus the free no-key sources.
+one verdict per indicator from every threat-intel source that's switched on.
+
+On your own machine the sources come from your .env keys. On the public
+website, visitors get the free no-key sources and can add their own keys.
 """
 
 import csv
+import hashlib
 import io
 import time
 from dataclasses import asdict
 
 import streamlit as st
 
-from soc_toolkit.config import build_providers
+from soc_toolkit.config import (MAIN_SOURCES, PUBLIC_MAX_PER_LOOKUP,
+                                PUBLIC_MAX_PER_SESSION, build_providers, is_public)
 from soc_toolkit.enrich import enrich
 from soc_toolkit.ioc import defang, parse_iocs
 
@@ -21,16 +25,52 @@ st.set_page_config(page_title="IOC Enrichment", page_icon="🔎", layout="wide")
 st.title("🔎 IOC Enrichment")
 st.write("Paste indicators below, one per line. Defanged values like `194[.]165[.]16[.]11` are fine.")
 
-providers, demo_mode = build_providers()
+public = is_public()
+
+KEY_LINKS = {
+    "VirusTotal": "https://www.virustotal.com",
+    "AbuseIPDB": "https://www.abuseipdb.com",
+    "OTX": "https://otx.alienvault.com",
+    "abuse.ch": "https://auth.abuse.ch",
+}
+
+
+def forget_keys():
+    for source in MAIN_SOURCES:
+        st.session_state[f"key_{source}"] = ""
+
+
+with st.sidebar:
+    if public:
+        with st.expander("🔑 Add your own API keys (optional)"):
+            st.caption(
+                "Free keys switch on more sources. They're kept only for this browser "
+                "session and are never saved. Close the tab and they're gone."
+            )
+            for source in MAIN_SOURCES:
+                label = "abuse.ch (MalwareBazaar, URLhaus, ThreatFox)" if source == "abuse.ch" else source
+                st.text_input(label, type="password", key=f"key_{source}", help=f"Free key from {KEY_LINKS[source]}")
+            st.button("Forget my keys", on_click=forget_keys)
+
+visitor_keys = {s: st.session_state.get(f"key_{s}", "") for s in MAIN_SOURCES} if public else {}
+providers, _ = build_providers(visitor_keys)
 
 with st.sidebar:
     st.subheader("Sources")
-    if demo_mode:
-        st.warning("Demo mode: sample data only")
     for p in providers:
         st.write(f"✅ {p.name}")
-    if not demo_mode:
+    if public:
+        st.caption("Without keys, IPs and hashes are checked. Add your own keys above "
+                   "to check domains and URLs too, and to switch on more sources.")
+    elif len(providers) < 9:
         st.caption("Add more keys to .env to switch on more sources.")
+
+if public:
+    st.info(
+        "**Public version.** Each indicator is sent to the third-party services listed "
+        "in the sidebar. Don't paste internal, client or incident data you're not "
+        f"allowed to share. Up to {PUBLIC_MAX_PER_LOOKUP} indicators per lookup."
+    )
 
 ICONS = {"Malicious": "🔴", "Suspicious": "🟠", "Clean": "🟢", "Internal": "🔵", "Unknown": "⚪"}
 
@@ -42,10 +82,18 @@ def short(value: str, ioc_type: str) -> str:
     return defang(value)
 
 
+def key_fingerprint(keys: dict) -> str:
+    """A one-way fingerprint of the visitor's keys, so cached results from one
+    visitor's keys are never handed to a visitor with different (or no) keys."""
+    joined = "|".join(f"{s}={keys.get(s, '')}" for s in sorted(keys))
+    return hashlib.sha256(joined.encode()).hexdigest()
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
-def cached_lookup(value: str, ioc_type: str, demo: bool):
-    """Cache results for an hour so repeat lookups don't burn API quota."""
-    provs, _ = build_providers()
+def cached_lookup(value: str, ioc_type: str, fingerprint: str, _keys: dict):
+    """Cache results for an hour so repeat lookups don't burn API quota.
+    The leading underscore stops Streamlit storing the keys themselves."""
+    provs, _ = build_providers(_keys)
     verdict, results = enrich(value, ioc_type, provs)
     return verdict, [asdict(r) for r in results]
 
@@ -72,17 +120,31 @@ if run:
     if not to_check:
         st.stop()
 
+    if public:
+        if len(to_check) > PUBLIC_MAX_PER_LOOKUP:
+            st.warning(f"The public version checks up to {PUBLIC_MAX_PER_LOOKUP} at a time, "
+                       f"so only the first {PUBLIC_MAX_PER_LOOKUP} were checked.")
+            to_check = to_check[:PUBLIC_MAX_PER_LOOKUP]
+        used = st.session_state.get("lookups_used", 0)
+        if used + len(to_check) > PUBLIC_MAX_PER_SESSION:
+            left = max(PUBLIC_MAX_PER_SESSION - used, 0)
+            st.error(f"The public version allows {PUBLIC_MAX_PER_SESSION} lookups per session and you have {left} left. "
+                     "To check more, run the toolkit on your own machine (see the GitHub page).")
+            st.stop()
+        st.session_state["lookups_used"] = used + len(to_check)
+
     # The free VirusTotal key allows 4 lookups a minute, so pace big batches
-    pace = (not demo_mode) and any(p.name == "VirusTotal" for p in providers) and len(to_check) > 4
+    pace = any(p.name == "VirusTotal" for p in providers) and len(to_check) > 4
     if pace:
         st.info(f"Free VirusTotal keys allow 4 lookups a minute. This batch will take about {len(to_check) // 4 + 1} minute(s).")
 
+    fingerprint = key_fingerprint(visitor_keys)
     rows = []
     bar = st.progress(0, text="Checking...")
     for i, (value, ioc_type) in enumerate(to_check):
         if pace and i > 0 and i % 4 == 0:
             time.sleep(60)
-        verdict, results = cached_lookup(value, ioc_type, demo_mode)
+        verdict, results = cached_lookup(value, ioc_type, fingerprint, visitor_keys)
         rows.append({"value": value, "type": ioc_type, "verdict": verdict, "results": results})
         bar.progress((i + 1) / len(to_check), text=f"Checked {i + 1} of {len(to_check)}")
     bar.empty()
@@ -94,6 +156,11 @@ if rows:
     cols = st.columns(len(counts))
     for c, (label, n) in zip(cols, counts.items()):
         c.metric(f"{ICONS[label]} {label}", n)
+
+    def no_results_text(r):
+        if r["verdict"] == "Internal":
+            return "Internal address, not looked up. Investigate it in your own logs."
+        return "None of the sources switched on can check this type. Add a key to switch on more."
 
     def flagged_by(results):
         """'3 of 5' = 3 sources scored it Malicious (50+) out of 5 that had an opinion."""
@@ -108,7 +175,7 @@ if rows:
             "Indicator (defanged)": short(r["value"], r["type"]),
             "Type": r["type"],
             "Flagged by": flagged_by(r["results"]),
-            "Top finding": next((f"{x['provider']}: {x['summary']}" for x in sorted(r["results"], key=lambda x: -(x["score"] or -1))), "Internal address, not looked up"),
+            "Top finding": next((f"{x['provider']}: {x['summary']}" for x in sorted(r["results"], key=lambda x: -(x["score"] or -1))), no_results_text(r)),
         } for r in rows],
         hide_index=True,
     )
@@ -117,7 +184,7 @@ if rows:
     for r in rows:
         with st.expander(f"{ICONS[r['verdict']]} {defang(r['value'])} ({r['type']})"):
             if not r["results"]:
-                st.write("Internal address. Investigate it in your own logs instead.")
+                st.write(no_results_text(r))
             for res in r["results"]:
                 st.markdown(f"**{res['provider']}**: {res['summary']}")
                 if res["details"]:

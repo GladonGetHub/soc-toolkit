@@ -4,6 +4,8 @@ A set of small tools that take repetitive work off a SOC analyst, built as one S
 
 > Work in progress. Modules are added one at a time, and each one is tested before the next is started.
 
+**Try it online:** [gladon-soc-toolkit.streamlit.app](https://gladon-soc-toolkit.streamlit.app). No sign-up or install needed.
+
 ![IOC Enrichment results](docs/screenshots/module1/04_results_summary.png)
 
 ## Modules
@@ -45,6 +47,19 @@ Checking an indicator usually means opening VirusTotal, then AbuseIPDB, then OTX
 | CIRCL hashlookup | Hash | None | Known-good files, to cut false positives |
 
 **Verdict logic:** each source gives a 0-100 score, or no opinion. The highest score wins: 50 or more is Malicious, 15 or more is Suspicious, anything lower is Clean. Two sources (GreyNoise and CIRCL) mainly say when something is *harmless*, which helps an analyst avoid escalating noise.
+
+### Two ways to run it
+
+| | Public website | Your own machine |
+|---|---|---|
+| Set-up | None, just open the link | Clone and install (below) |
+| Sources | The 3 free no-key sources, plus any you unlock with your own keys | Every source you have a key for in `.env` |
+| Your keys | Pasted in the sidebar, kept only for your browser session, never saved | Kept in `.env`, which never leaves your machine |
+| Limits | 10 indicators per lookup, 50 per session | None (apart from each service's own limits) |
+
+The app picks the mode by itself: if the server has keys in `.env` it runs privately, and if it has none it runs as the public version. The public website has no keys of mine on it, so visitors never share anyone else's quota.
+
+**Privacy:** every indicator you check is sent to the services listed in the sidebar. Don't paste internal, client or incident data into the public version unless you're allowed to share it. Internal IP addresses are never sent anywhere.
 
 ### Screenshots
 
@@ -101,7 +116,7 @@ Built and tested on Ubuntu with Python 3.14.
 
 The app opens in your browser at http://localhost:8501.
 
-**API keys (optional):** without keys the app runs in demo mode with sample data. For live lookups, copy `.env.example` to `.env` and add your free keys from [VirusTotal](https://www.virustotal.com), [AbuseIPDB](https://www.abuseipdb.com), [AlienVault OTX](https://otx.alienvault.com) and [abuse.ch](https://auth.abuse.ch). Any combination works; the app uses whichever keys are set. The `.env` file is ignored by git, so keys never reach GitHub.
+**API keys (optional):** without keys the app runs as the public version, with the free no-key sources. To switch on every source, copy `.env.example` to `.env` and add your free keys from [VirusTotal](https://www.virustotal.com), [AbuseIPDB](https://www.abuseipdb.com), [AlienVault OTX](https://otx.alienvault.com) and [abuse.ch](https://auth.abuse.ch). Any combination works; the app uses whichever keys are set. The `.env` file is ignored by git, so keys never reach GitHub.
 
 **Tests:**
 
@@ -120,8 +135,8 @@ soc-toolkit/
 │   ├── ioc.py               detect, refang and defang indicators
 │   ├── sources.py           one class per threat-intel source
 │   ├── enrich.py            combines source scores into a verdict
-│   └── config.py            loads API keys from .env
-├── tests/                   20 unit tests (no API keys needed)
+│   └── config.py            loads API keys, picks private or public mode
+├── tests/                   24 unit tests (no API keys needed)
 ├── docs/                    how it works, and screenshots
 ├── .env.example             template for your API keys
 └── requirements.txt
