@@ -129,4 +129,4 @@ soc-toolkit/
 
 ## Author
 
-Gladon, SOC Analyst · MSc Cyber Security · [LinkedIn](https://www.linkedin.com/in/YOUR-PROFILE)
+Gladon, SOC Analyst · MSc Cyber Security · [LinkedIn](https://www.linkedin.com/in/ugonmagladon)
