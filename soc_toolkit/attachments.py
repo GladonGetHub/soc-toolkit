@@ -68,6 +68,15 @@ ATTACH_WEIGHTS = {
 }
 
 
+# Short names for each problem, for tables and case notes
+PROBLEM_LABELS = {
+    "program": "Program", "shortcut": "Shortcut", "archive_program": "Archive hides a program",
+    "double_ext": "Double extension", "rtlo": "Reversed name", "macros": "Macros",
+    "disguised": "Type disguised", "disk_image": "Disk image", "html": "HTML page",
+    "locked_archive": "Password-protected", "pdf_active": "Active PDF content",
+}
+
+
 @dataclass
 class Attachment:
     name: str

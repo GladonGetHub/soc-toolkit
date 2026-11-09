@@ -8,6 +8,7 @@ Part 1: headers, SPF, DKIM, DMARC and the route the email took.
 Part 2: links.
 Part 3: attachments.
 Part 4: checking the IP, link domains and file hashes with Module 1's sources.
+Finally, a case note to paste into a ticket.
 """
 
 from dataclasses import replace
@@ -15,12 +16,15 @@ from pathlib import Path
 
 import streamlit as st
 
+from soc_toolkit.attachments import PROBLEM_LABELS as ATTACH_LABELS
 from soc_toolkit.attachments import RTLO
+from soc_toolkit.case_note import build_case_note
 from soc_toolkit.config import is_public
 from soc_toolkit.display import safe_text
 from soc_toolkit.email_analyser import analyse_email
 from soc_toolkit.email_intel import collect_iocs, intel_findings
 from soc_toolkit.ioc import defang
+from soc_toolkit.links import PROBLEM_LABELS as LINK_LABELS
 from soc_toolkit.lookup import flagged_by, run_lookups, top_finding, within_public_limits
 from soc_toolkit.phishing import MAX_EMAIL_BYTES
 
@@ -147,6 +151,16 @@ if report:
                 for item in skipped:
                     st.markdown(f"- {safe_text(item)}")
 
+    # ------------------------------------------------------------ case note
+    case_note = build_case_note(r, intel["rows"] if intel else None)
+    with st.expander("📝 Case note for your ticket"):
+        st.caption("Everything you'd write up by hand: verdict, recommended action, red flags and defanged "
+                   "indicators. Copy it with the icon at the top right of the box, or download it. "
+                   + ("" if intel else "Run the threat intelligence check first to include its results."))
+        st.code(case_note, language=None)
+        st.download_button("Download case note (.txt)", case_note, file_name="phishing_case_note.txt",
+                           mime="text/plain")
+
     def show_flag(f, note_icon=True):
         points = f" (+{f.points})" if f.points else ""
         icon = "ℹ️ " if note_icon and not f.points else ""
@@ -176,18 +190,13 @@ if report:
     # ---------------------------------------------------------------- links
     st.subheader("Links")
     st.caption("Every link in the email, defanged so none can be clicked. They were read, not visited.")
-    PROBLEM_NAMES = {
-        "mismatch": "Text doesn't match", "at_trick": "@ trick", "lookalike": "Lookalike domain",
-        "form": "Form in email", "risky_file": "Downloads a program", "ip_host": "Bare IP address",
-        "punycode": "Disguised characters", "shortener": "Shortened link", "plain_http": "Not encrypted",
-    }
     if r.links:
         st.dataframe([{
             "": "🚩" if [p for p in l.problems if p != "plain_http"] else "✅",
             "Shown to the reader": defang(l.shown) if l.shown else "(the address itself)",
             "Really goes to": defang(l.url) if l.url else "(no address)",
             "Found in": l.found_in,
-            "Problems": ", ".join(PROBLEM_NAMES[p] for p in l.problems) or "None",
+            "Problems": ", ".join(LINK_LABELS[p] for p in l.problems) or "None",
         } for l in r.links], hide_index=True)
     else:
         st.write("No links found.")
@@ -195,12 +204,6 @@ if report:
     # ---------------------------------------------------------- attachments
     st.subheader("Attachments")
     st.caption("Each file's contents were read to see what it really is. Nothing was opened, run or saved.")
-    ATTACH_NAMES = {
-        "program": "Program", "shortcut": "Shortcut", "archive_program": "Archive hides a program",
-        "double_ext": "Double extension", "rtlo": "Reversed name", "macros": "Macros",
-        "disguised": "Type disguised", "disk_image": "Disk image", "html": "HTML page",
-        "locked_archive": "Password-protected", "pdf_active": "Active PDF content",
-    }
 
     def size(n):
         return f"{n / 1024:.1f} KB" if n >= 1024 else f"{n} bytes"
@@ -212,7 +215,7 @@ if report:
             "Size": size(a.size),
             "Email says it is": a.declared_type,
             "Really is": a.real_type,
-            "Problems": ", ".join(ATTACH_NAMES[p] for p in a.problems) or "None",
+            "Problems": ", ".join(ATTACH_LABELS[p] for p in a.problems) or "None",
             "SHA256": f"{a.sha256[:12]}…",
         } for a in r.attachments], hide_index=True)
         with st.expander("File hashes, to check in IOC Enrichment"):

@@ -44,7 +44,7 @@ Think of the sources as three kinds of witness:
 - **MalwareBazaar, URLhaus, ThreatFox** (abuse.ch, one key): curated lists of known malware samples, malware download sites and attacker servers. Being listed at all is strong evidence, so they score high. ThreatFox stores IPs as `ip:port`, so we check the IP part matches exactly; otherwise `1.2.3.4` would wrongly match `1.2.3.45`.
 
 **"People have written about it"**
-- **AlienVault OTX:** counts threat reports ("pulses") that mention the indicator. Popular safe things such as Google DNS appear in lots of reports too (malware uses them), so it takes 10+ reports to score Malicious, and OTX's own "whitelisted" flag sets the score to 0.
+- **AlienVault OTX:** counts threat reports ("pulses") that mention the indicator. Popular safe things such as Google DNS appear in lots of reports too (malware uses them), so it takes 10+ reports to score Malicious, and OTX's own "whitelisted" flag sets the score to 0. **No reports at all means "no opinion", not "clean"**: brand-new malware and phishing sites have no reports either, so silence proves nothing.
 
 **"It's probably fine"** (cut false positives)
 - **GreyNoise:** tells you if an IP is a mass internet scanner hitting everyone, or a known business service like Google. That's background noise, not a targeted attack.
@@ -99,7 +99,7 @@ The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 58 checks (24 for Module 1, 34 for Module 2): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 63 checks (25 for Module 1, 38 for Module 2): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 
@@ -335,3 +335,48 @@ The evidence in the email. Attackers register fresh domains for each campaign, s
 
 **Why do you skip internal IPs?**
 Sending them out reveals how your network is laid out, and outside services know nothing about private addresses anyway.
+
+---
+
+# How Module 2 works (the case note)
+
+## Why it exists
+
+Finding phishing is half the job. The other half is writing it up so the next person (the team lead, the next shift, the incident responder) can act without redoing the analysis. `soc_toolkit/case_note.py` builds that write-up as **plain text**, so it pastes cleanly into any ticketing system.
+
+## What's in it
+
+| Section | What it contains |
+|---|---|
+| Verdict | The verdict and risk score |
+| Recommended action | What to do next, matched to the verdict |
+| Email | Subject, sender, Reply-To, Return-Path, recipient, date, Message-ID, SPF/DKIM/DMARC and the sending IP |
+| Red flags | Every red flag with its points, area and reason, highest first |
+| Indicators | Sending IP, domains, full URLs and each attachment's name, real type, SHA256 and MD5 |
+| Threat intelligence | Each lookup's verdict and top finding, if the check was run |
+| Analyst notes | A blank space for your own notes |
+
+## The two rules
+
+1. **Nothing is clickable.** Ticketing systems often turn web and email addresses into links, and someone might click one by accident. Every link, address and domain is defanged, so `paypal-account-verify.com` becomes `paypal-account-verify[.]com`.
+2. **Except what you need to search with.** The Message-ID and subject are kept exactly as sent, because you'll paste them into a mailbox search (for example in Microsoft 365 Content Search) to find and remove every copy of the email. Hashes don't need defanging; they can't be clicked.
+
+## The recommended actions
+
+For **Likely phishing**, the steps follow a standard phishing response:
+1. Don't click or open anything.
+2. **Block** the sender's domain and IP at the email gateway, and the link domains at the web proxy.
+3. **Search and remove** the same email from every mailbox.
+4. **Check who clicked**, in proxy and endpoint logs.
+5. If anyone typed a password: **reset it, end their sessions and check for new mailbox rules**. Attackers often add a rule that hides replies from the real user.
+
+## Questions an interviewer might ask
+
+**You've confirmed a phishing email. What do you do?**
+Contain first: block the sender and links, and pull the email from every mailbox. Then scope: who received it, who clicked, who entered details. Then remediate: reset passwords, end sessions, check mailbox rules and MFA changes. Finally, write it up, which is what the case note is for.
+
+**Why defang indicators in a ticket?**
+So nobody clicks them by accident, including tools that preview links automatically.
+
+**Why keep the Message-ID as it is?**
+It's the most reliable way to find every copy of the same email across mailboxes. Changing it would break the search.

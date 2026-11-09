@@ -164,9 +164,11 @@ class OTX:
         if whitelisted:
             score, summary = 0, "Whitelisted as a known safe indicator"
         else:
+            # No reports means "nobody has written about it", not "it's safe":
+            # brand-new malware and phishing sites have no reports either.
             # Popular indicators appear in many reports, so we only call it
             # malicious when lots of separate reports mention it.
-            score = 0 if count == 0 else 10 if count < 3 else 30 if count < 10 else 60
+            score = None if count == 0 else 10 if count < 3 else 30 if count < 10 else 60
             summary = f"Mentioned in {count} threat report(s)" if count else "No threat reports mention it"
         families = sorted({f.get("display_name", "") for p in pulses for f in (p.get("malware_families") or []) if isinstance(f, dict)} - {""})
         details = {"Pulses": count, "Latest reports": [p.get("name", "") for p in pulses[:5]]}

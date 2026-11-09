@@ -55,6 +55,14 @@ LINK_WEIGHTS = {
 }
 
 
+# Short names for each problem, for tables and case notes
+PROBLEM_LABELS = {
+    "mismatch": "Text doesn't match", "at_trick": "@ trick", "lookalike": "Lookalike domain",
+    "form": "Form in email", "risky_file": "Downloads a program", "ip_host": "Bare IP address",
+    "punycode": "Disguised characters", "shortener": "Shortened link", "plain_http": "Not encrypted",
+}
+
+
 @dataclass
 class Link:
     url: str                 # where it really goes

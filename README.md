@@ -13,8 +13,8 @@ A set of small tools that take repetitive work off a SOC analyst, built as one S
 | # | Module | What it does | Status |
 |---|---|---|---|
 | 1 | IOC Enrichment | Check IPs, domains, URLs and file hashes against 9 threat-intel sources in one go | ✅ Ready |
-| 2 | Phishing Email Analyser | Check an email's sender, links and attachments for phishing | 🔨 In progress (all checks done, case note next) |
-| 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | Planned |
+| 2 | Phishing Email Analyser | Check an email's sender, links and attachments for phishing | ✅ Ready |
+| 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | 🔜 Next |
 | 4 | Threat Feed Aggregator | Merge free threat feeds into one Splunk lookup | Planned |
 | 5 | Alert Triage Assistant | Enrich a SIEM alert and draft the case note | Planned |
 | 6 | Shift Handover | Open incidents and notes for the next shift | Planned |
@@ -100,7 +100,7 @@ Upload a suspicious email (`.eml`) or paste its source. The email is only read: 
 
 Each red flag adds points to one risk score, using the same scale as Module 1, and comes with a plain-English reason. Two fictional sample emails are included to try it with.
 
-> Next: a downloadable case note, ready to paste into a ticket.
+**Case note:** one click gives a plain-text write-up ready to paste into a ticket, with the verdict, recommended actions, every red flag, the defanged indicators, attachment hashes and the threat-intel results. The Message-ID is kept exactly as sent, so it can be used to search other mailboxes for the same email.
 
 ## Getting started
 
@@ -158,11 +158,12 @@ soc-toolkit/
 │   ├── attachments.py       email attachments: what the files really are
 │   ├── email_analyser.py    combines headers, links and attachments into one risk score
 │   ├── email_intel.py       checks the email's IP, domains and hashes with module 1
+│   ├── case_note.py         writes the ticket-ready case note
 │   ├── lookup.py            shared lookups: caching, limits and pacing
 │   ├── display.py           shows email text safely (nothing clickable)
 │   └── config.py            loads API keys, picks private or public mode
 ├── samples/                 two fictional emails to try module 2 with
-├── tests/                   58 unit tests (no API keys needed)
+├── tests/                   63 unit tests (no API keys needed)
 ├── docs/                    how it works, and screenshots
 ├── .streamlit/config.toml   5 MB upload limit
 ├── .env.example             template for your API keys

@@ -101,3 +101,10 @@ def test_circl_known_good(monkeypatch):
     assert res.score == 0 and "kernel32.dll" in res.summary
     fake(monkeypatch, 404)
     assert s.CIRCLHashlookup().lookup("a" * 32, "md5").score is None
+
+
+def test_otx_no_reports_is_no_opinion(monkeypatch):
+    """Nobody reporting a file doesn't make it clean: new malware has no reports either."""
+    fake(monkeypatch, 200, {"pulse_info": {"count": 0, "pulses": []}})
+    res = s.OTX("k").lookup("a" * 64, "sha256")
+    assert res.score is None and res.summary == "No threat reports mention it"
