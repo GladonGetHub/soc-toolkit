@@ -29,7 +29,7 @@ else:
 st.subheader("Modules")
 modules = [
     ("1", "IOC Enrichment", "Check IPs, domains, URLs and hashes against 9 threat-intel sources in one go", "✅ Ready"),
-    ("2", "Phishing Email Analyser", "Upload a suspicious email and get a verdict", "🔜 Next"),
+    ("2", "Phishing Email Analyser", "Upload a suspicious email and get a verdict", "🔨 In progress"),
     ("3", "Log Parser", "Find brute-force patterns in Windows and Linux logs", "Planned"),
     ("4", "Threat Feed Aggregator", "Merge free threat feeds into one Splunk lookup", "Planned"),
     ("5", "Alert Triage Assistant", "Enrich a SIEM alert and draft the case note", "Planned"),

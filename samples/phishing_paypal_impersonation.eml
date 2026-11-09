@@ -1,0 +1,43 @@
+Return-Path: <bounce-7731@mailer-cheap.example>
+Delivered-To: j.wright@thornbury-wealth.example
+Authentication-Results: mx.thornbury-wealth.example;
+       dkim=none (message not signed) header.i=@paypal-account-verify.example;
+       spf=softfail (domain of transitioning bounce-7731@mailer-cheap.example does not designate 185.220.101.55 as permitted sender) smtp.mailfrom=bounce-7731@mailer-cheap.example;
+       dmarc=fail (p=NONE sp=NONE dis=NONE) header.from=paypal-account-verify.example
+Received: from mail.mailer-cheap.example (unknown [185.220.101.55])
+        by mx.thornbury-wealth.example with ESMTP id 4kQm2Z1x9Bz3
+        for <j.wright@thornbury-wealth.example>; Tue, 3 Nov 2026 17:14:26 +0000 (GMT)
+Received: from [10.0.0.12] (helo=localhost)
+        by mail.mailer-cheap.example with esmtpa (Exim 4.96)
+        id 1vX9Lq-000Abc-2Q; Tue, 3 Nov 2026 17:14:24 +0000
+Authentication-Results: fake.example; dkim=pass; spf=pass; dmarc=pass
+From: "PayPal Security <service@paypal.com>" <alert@paypal-account-verify.example>
+Reply-To: paypal.resolution.team@gmail.com
+To: j.wright@thornbury-wealth.example
+Subject: Action required: your account has been limited
+Date: Tue, 3 Nov 2026 17:14:20 +0000
+Message-ID: <20261103171420.4471@mailer-cheap.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1"
+
+--b1
+Content-Type: text/plain; charset="utf-8"
+
+Dear Customer,
+
+We noticed unusual activity on your account and have limited what you can do.
+Confirm your details within 24 hours to avoid permanent suspension:
+https://paypal-account-verify.example/secure/login
+
+PayPal Security Team
+
+--b1
+Content-Type: text/html; charset="utf-8"
+
+<p>Dear Customer,</p>
+<p>We noticed unusual activity on your account and have limited what you can do.</p>
+<p>Confirm your details within 24 hours to avoid permanent suspension:
+<a href="https://paypal-account-verify.example/secure/login">https://www.paypal.com/myaccount</a></p>
+<p>PayPal Security Team</p>
+
+--b1--

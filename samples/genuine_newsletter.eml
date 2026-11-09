@@ -1,0 +1,23 @@
+Return-Path: <bounces+2210@em.thornbury-wealth.example>
+Delivered-To: j.wright@thornbury-wealth.example
+Authentication-Results: mx.thornbury-wealth.example;
+       dkim=pass header.i=@thornbury-wealth.example header.s=s1 header.b=Kq3vT8aZ;
+       spf=pass (domain of bounces+2210@em.thornbury-wealth.example designates 198.51.100.25 as permitted sender) smtp.mailfrom=bounces+2210@em.thornbury-wealth.example;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=thornbury-wealth.example
+Received: from o1.em.thornbury-wealth.example (o1.em.thornbury-wealth.example [198.51.100.25])
+        by mx.thornbury-wealth.example with ESMTPS id 7tYb1Q0m3Lz8
+        for <j.wright@thornbury-wealth.example>; Tue, 3 Nov 2026 16:02:10 +0000 (GMT)
+From: "Thornbury Wealth Partners" <news@thornbury-wealth.example>
+To: j.wright@thornbury-wealth.example
+Subject: Your November market update
+Date: Tue, 3 Nov 2026 16:02:05 +0000
+Message-ID: <a1b2c3d4e5@thornbury-wealth.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Hello,
+
+This month's market update is now in your client portal. Log in the usual way
+through our website; we will never ask for your password by email.
+
+Thornbury Wealth Partners

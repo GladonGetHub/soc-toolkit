@@ -13,7 +13,7 @@ A set of small tools that take repetitive work off a SOC analyst, built as one S
 | # | Module | What it does | Status |
 |---|---|---|---|
 | 1 | IOC Enrichment | Check IPs, domains, URLs and file hashes against 9 threat-intel sources in one go | ✅ Ready |
-| 2 | Phishing Email Analyser | Upload a suspicious email and get a verdict | 🔜 Next |
+| 2 | Phishing Email Analyser | Upload a suspicious email and get a verdict | 🔨 In progress (headers and SPF/DKIM/DMARC done) |
 | 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | Planned |
 | 4 | Threat Feed Aggregator | Merge free threat feeds into one Splunk lookup | Planned |
 | 5 | Alert Triage Assistant | Enrich a SIEM alert and draft the case note | Planned |
@@ -130,13 +130,16 @@ pytest
 soc-toolkit/
 ├── app.py                   home page
 ├── pages/
-│   └── 1_IOC_Enrichment.py  module 1 screen
+│   ├── 1_IOC_Enrichment.py  module 1 screen
+│   └── 2_Phishing_Analyser.py  module 2 screen
 ├── soc_toolkit/
 │   ├── ioc.py               detect, refang and defang indicators
 │   ├── sources.py           one class per threat-intel source
 │   ├── enrich.py            combines source scores into a verdict
+│   ├── phishing.py          reads email headers and finds red flags
 │   └── config.py            loads API keys, picks private or public mode
-├── tests/                   24 unit tests (no API keys needed)
+├── samples/                 two fictional emails to try module 2 with
+├── tests/                   34 unit tests (no API keys needed)
 ├── docs/                    how it works, and screenshots
 ├── .env.example             template for your API keys
 └── requirements.txt

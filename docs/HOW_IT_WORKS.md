@@ -99,7 +99,7 @@ The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 24 checks: refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 34 checks (24 for Module 1, 10 for Module 2): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 
@@ -123,3 +123,67 @@ There are no keys of mine on the server, so there's nothing of mine to steal or 
 
 **What would you add next?**
 Bulk import from a CSV, and saving results to a case.
+
+---
+
+# How Module 2 works (part 1: headers)
+
+## The big picture
+
+Think of an email as a letter in an envelope.
+
+- The **From** line is what the sender wrote on the front. Anyone can write "PayPal" there, just as anyone can write "From: the King" on an envelope.
+- The **Received** headers are the **postmarks**. Every mail server the email passes through stamps it, so they show the real route.
+- **SPF, DKIM and DMARC** are the **security checks** the receiving mail server did on arrival, and it writes the results in the **Authentication-Results** header.
+
+`soc_toolkit/phishing.py` reads all of this and lists what an analyst would look for by hand. It only reads the email: links aren't visited and attachments aren't opened.
+
+## The three checks, in plain English
+
+| Check | The question it answers | Envelope version |
+|---|---|---|
+| **SPF** | Is the sending server allowed to send for this domain? | Was it posted from one of the company's own post offices? |
+| **DKIM** | Is the email signed, and unchanged since it was sent? | Is the wax seal intact? |
+| **DMARC** | Does SPF or DKIM back up the From address the reader actually sees? | Does the seal match the name on the front, and what does the company say to do if it doesn't? |
+
+SPF and DKIM can both pass for an attacker's *own* domain. DMARC is the one that ties them to the From address, which is why a DMARC fail scores highest.
+
+## Why only the top Authentication-Results header counts
+
+Headers are added from the **top down**. The receiving server adds its results above everything that arrived with the email. A phisher can put `dmarc=pass` in their own headers before sending, but it will always sit **below** the real one. So we trust only the top header, and if a lower one claims a pass that the real one doesn't, we flag it as a **fake authentication header**.
+
+## Red flags and their points
+
+Same scale as Module 1: **50+ Likely phishing**, **15+ Suspicious**, below that **No red flags in headers**. Points add up, up to a maximum of 100.
+
+| Red flag | Points | Why it matters |
+|---|---|---|
+| DMARC failed | 40 | The From address isn't backed by SPF or DKIM |
+| Pretends to be a brand | 35 | "PayPal" in the name, but the domain isn't PayPal's |
+| Fake address in the display name | 30 | `"service@paypal.com" <alert@evil.example>`: many apps only show the name |
+| SPF failed | 30 | The server isn't allowed to send for that domain |
+| DKIM failed | 25 | The signature is broken: forged or changed |
+| Replies go to a different domain | 25 | Classic in invoice fraud and CEO fraud: you reply to the attacker |
+| Fake authentication header | 20 | Someone planted a fake "pass" |
+| SPF soft fail | 15 | The domain says this server probably shouldn't send its mail |
+| SPF or DKIM missing | 10 | No proof either way |
+| Return-Path on a different domain | 10 | Normal for newsletters, so low on its own |
+
+**Brand check:** the brand must be the *exact* company name in the domain. `paypal.co.uk` passes, while `paypal-account-verify.com` and `gmail.com` don't. A lookalike domain containing the brand name is one of the most common tricks, so "contains paypal" isn't good enough.
+
+**Where it entered the internet:** the route is read from the bottom (the sender's end) up, and the first public IP is where the email entered the internet. Internal addresses such as `10.x` are skipped. That's the IP to check in Module 1.
+
+## What headers can't tell you
+
+A genuine, fully authenticated email can still be dangerous if the sender's real account was hacked. That's why the next parts of this module look at the **links** and **attachments** too.
+
+## Questions an interviewer might ask
+
+**SPF passed, so it's genuine, right?**
+Not necessarily. SPF checks the hidden Return-Path domain, not the From address the reader sees. An attacker can pass SPF for their own domain. DMARC is the check that links it to the visible From.
+
+**How can a phisher fake headers?**
+They can write any header they like *before* sending, including a fake Authentication-Results. They can't control what the receiving server adds on top, which is why we trust only the top one.
+
+**Why might a genuine email fail DMARC?**
+Forwarding and mailing lists can break SPF and DKIM. That's why the tool shows the reasons, not just a score, so the analyst can judge.
