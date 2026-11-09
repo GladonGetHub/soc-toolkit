@@ -44,7 +44,7 @@ def test_sample_phishing_email():
 
 def test_sample_genuine_email():
     r = analyse_headers((SAMPLES / "genuine_newsletter.eml").read_bytes())
-    assert r.score == 0 and r.verdict == "No red flags in headers"
+    assert r.score == 0 and r.verdict == "No red flags found"
     assert [g.title for g in r.good] == ["SPF passed", "DKIM passed", "DMARC passed"]
 
 

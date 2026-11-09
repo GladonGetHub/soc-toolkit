@@ -99,7 +99,7 @@ The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 34 checks (24 for Module 1, 10 for Module 2): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 45 checks (24 for Module 1, 21 for Module 2): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 
@@ -154,7 +154,7 @@ Headers are added from the **top down**. The receiving server adds its results a
 
 ## Red flags and their points
 
-Same scale as Module 1: **50+ Likely phishing**, **15+ Suspicious**, below that **No red flags in headers**. Points add up, up to a maximum of 100.
+Same scale as Module 1: **50+ Likely phishing**, **15+ Suspicious**, below that **No red flags found**. Points add up, up to a maximum of 100.
 
 | Red flag | Points | Why it matters |
 |---|---|---|
@@ -175,7 +175,7 @@ Same scale as Module 1: **50+ Likely phishing**, **15+ Suspicious**, below that 
 
 ## What headers can't tell you
 
-A genuine, fully authenticated email can still be dangerous if the sender's real account was hacked. That's why the next parts of this module look at the **links** and **attachments** too.
+A genuine, fully authenticated email can still be dangerous if the sender's real account was hacked. That's why part 2 checks the **links**, and part 3 will check the **attachments**.
 
 ## Questions an interviewer might ask
 
@@ -187,3 +187,55 @@ They can write any header they like *before* sending, including a fake Authentic
 
 **Why might a genuine email fail DMARC?**
 Forwarding and mailing lists can break SPF and DKIM. That's why the tool shows the reasons, not just a score, so the analyst can judge.
+
+---
+
+# How Module 2 works (part 2: links)
+
+## The big picture
+
+Almost every phishing email wants a click. The trick is that what you **see** isn't always where a link **goes**. In HTML, a link has two parts:
+
+```html
+<a href="https://paypal-account-verify.example/login">https://www.paypal.com/myaccount</a>
+       └── where it really goes ──────────────────┘ └── what you see ─────────────┘
+```
+
+Think of a shop sign that says "Bank" over the door of a different building. Your mail app shows you the sign. You'd only see the real address by hovering over the link, and on a phone you can't hover at all.
+
+`soc_toolkit/links.py` reads the email's HTML the way a browser would, collects every link's real address and visible text, and checks each one. **No link is ever visited.**
+
+## The checks
+
+| Red flag | Points | Example | Why it matters |
+|---|---|---|---|
+| Text doesn't match where it goes | 40 | shows `paypal.com`, goes to `evil.example` | The most common phishing trick |
+| "@" trick | 35 | `https://paypal.com@evil.example` | Browsers ignore everything before the @ |
+| Lookalike domain | 30 | `paypa1.com`, `paypal-account-verify.com` | Made to read like a brand at a glance |
+| Form inside the email | 30 | a password box in the email itself | Real companies never collect details this way |
+| Link downloads a program | 25 | `invoice.pdf.exe` | Runs code when opened |
+| Bare IP address | 25 | `http://203.0.113.50/login` | Genuine companies use names, not numbers |
+| Disguised characters | 25 | `xn--80ak6aa92e.com` (reads as "apple.com" in Cyrillic letters) | Letters from other alphabets that look like ours |
+| Shortened link | 15 | `bit.ly/3abc` | Hides the real destination |
+| Not encrypted | 5 | `http://` | Not proof on its own |
+
+Each **kind** of problem counts once per email. Ten shortened links still score 15, not 150, but the explanation says "10 links like this".
+
+**Lookalike check.** Swapped characters are put back first (`0` becomes `o`, `1` becomes `l`, `rn` becomes `m`), so `paypa1` reads as `paypal` and `rnicrosoft` as `microsoft`. Short brand names only match as a whole word, so `ups` doesn't match `groupsales` and `apple` doesn't match `pineapple`. Real company domains such as `googleapis.com` or `amazonaws.com` are recognised as genuine.
+
+**Newsletter trackers.** Mailing services like Mailchimp send every link through their own click counter first, so the text says the company's site but the link goes via `list-manage.com`. That's normal marketing email, so it isn't counted as a mismatch.
+
+## Showing email text safely
+
+The page is built with Markdown, which turns any email address or web address into a clickable link. Text from a suspicious email must never become clickable, so `display.py` defangs addresses (`service@paypal[.]com`) and links (`hxxps://...`) and stops any formatting characters. That last part matters because an attacker could put `[Click me](https://evil.example)` in their display name, hoping it shows up as a real link in the analyst's own tool.
+
+## Questions an interviewer might ask
+
+**How would you check a link without clicking it?**
+Read the real address from the HTML, compare it with the visible text, and look the domain up in threat intelligence. Never open it on your own machine. If you must see the page, use a sandbox such as urlscan.io or an isolated VM.
+
+**Why is a mismatched link worse than a shortened one?**
+A shortener hides the destination, but plenty of genuine companies use them. A link whose text names one site but goes to another is deliberately misleading, so it scores higher.
+
+**What did you do about false positives?**
+Real company domains are recognised, newsletter trackers aren't counted as mismatches, short brand names only match whole words, and every red flag shows its reason so the analyst can judge.

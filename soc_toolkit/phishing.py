@@ -41,12 +41,13 @@ FREE_PROVIDERS = {
 # paypal.* is a classic sign of impersonation, and so is a lookalike such as
 # paypal-secure-login.com.
 BRANDS = {
-    "paypal": ["paypal"],
+    "paypal": ["paypal", "paypalobjects"],
     "microsoft": ["microsoft", "microsoftonline", "office", "office365", "outlook", "live", "hotmail"],
     "office 365": ["microsoft", "microsoftonline", "office", "office365"],
     "outlook": ["microsoft", "outlook", "live", "hotmail"],
     "apple": ["apple", "icloud"], "icloud": ["apple", "icloud"],
-    "amazon": ["amazon"], "netflix": ["netflix"], "google": ["google", "gmail", "googlemail"],
+    "amazon": ["amazon", "amazonaws", "amazonses"], "netflix": ["netflix"],
+    "google": ["google", "gmail", "googlemail", "googleapis", "googleusercontent", "gstatic", "youtube"],
     "hmrc": ["hmrc"], "dhl": ["dhl"], "royal mail": ["royalmail"], "dpd": ["dpd"],
     "evri": ["evri"], "fedex": ["fedex"], "ups": ["ups"],
     "barclays": ["barclays"], "hsbc": ["hsbc"], "lloyds": ["lloyds", "lloydsbank"],
@@ -56,6 +57,18 @@ BRANDS = {
     "instagram": ["instagram", "facebookmail", "meta"], "whatsapp": ["whatsapp", "meta"],
     "coinbase": ["coinbase"], "binance": ["binance"],
 }
+
+# How each brand is written, where it isn't just a capital first letter
+BRAND_LABELS = {
+    "paypal": "PayPal", "hmrc": "HMRC", "dhl": "DHL", "dpd": "DPD", "ups": "UPS", "hsbc": "HSBC",
+    "natwest": "NatWest", "linkedin": "LinkedIn", "docusign": "DocuSign", "whatsapp": "WhatsApp",
+    "icloud": "iCloud", "office 365": "Office 365", "royal mail": "Royal Mail",
+}
+
+
+def brand_label(brand: str) -> str:
+    return BRAND_LABELS.get(brand, brand.title())
+
 
 # Points per red flag. Same scale as Module 1: 50+ likely phishing, 15+ suspicious.
 WEIGHTS = {
@@ -71,6 +84,7 @@ class Flag:
     points: int          # 0 means "worth knowing" rather than suspicious
     title: str
     why: str             # plain-English explanation for the analyst
+    area: str = "Headers"
 
 
 @dataclass
@@ -82,7 +96,7 @@ class Hop:
 
 
 @dataclass
-class HeaderReport:
+class EmailReport:
     subject: str = ""
     date: str = ""
     from_name: str = ""
@@ -98,6 +112,7 @@ class HeaderReport:
     forged_auth: list = field(default_factory=list)  # methods faked lower down
     flags: list = field(default_factory=list)
     good: list = field(default_factory=list)
+    links: list = field(default_factory=list)  # filled in by email_analyser.py
     raw_headers: str = ""
 
     @property
@@ -110,7 +125,10 @@ class HeaderReport:
             return "Likely phishing"
         if self.score >= 15:
             return "Suspicious"
-        return "No red flags in headers"
+        return "No red flags found"
+
+
+HeaderReport = EmailReport  # the name used before links were added
 
 
 # ------------------------------------------------------------------ helpers
@@ -327,14 +345,14 @@ def find_flags(r: HeaderReport) -> tuple[list[Flag], list[Flag]]:
 
 
 # ------------------------------------------------------------- main entry
-def analyse_headers(raw: bytes) -> HeaderReport:
+def analyse_headers(raw: bytes) -> EmailReport:
     """Read an email's raw source and report what its headers say."""
     if len(raw) > MAX_EMAIL_BYTES:
         raise ValueError("Email is larger than 5 MB.")
     msg = parse_email(raw)
 
     from_name, from_address = parseaddr(_header(msg, "From"))
-    r = HeaderReport(
+    r = EmailReport(
         subject=_header(msg, "Subject"),
         date=_header(msg, "Date"),
         from_name=from_name,

@@ -1,0 +1,9 @@
+# Streamlit settings, used on your machine and on the public website.
+
+[server]
+# The Phishing Email Analyser accepts emails up to 5 MB
+maxUploadSize = 5
+
+[browser]
+# Don't send usage statistics to Streamlit
+gatherUsageStats = false

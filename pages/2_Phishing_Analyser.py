@@ -1,11 +1,12 @@
 """
 Module 2: Phishing Email Analyser
 
-Upload a suspicious email (.eml) or paste its source, and see what the
-headers say about where it really came from.
+Upload a suspicious email (.eml) or paste its source, and see who really
+sent it and where its links really go.
 
 Part 1: headers, SPF, DKIM, DMARC and the route the email took.
-Coming next: links, attachments, and checking them with Module 1's sources.
+Part 2: links.
+Coming next: attachments, and checking everything with Module 1's sources.
 """
 
 from pathlib import Path
@@ -13,13 +14,14 @@ from pathlib import Path
 import streamlit as st
 
 from soc_toolkit.config import is_public
+from soc_toolkit.display import safe_text
+from soc_toolkit.email_analyser import analyse_email
 from soc_toolkit.ioc import defang
-from soc_toolkit.phishing import MAX_EMAIL_BYTES, analyse_headers
+from soc_toolkit.phishing import MAX_EMAIL_BYTES
 
-st.set_page_config(page_title="Phishing Email Analyser", page_icon="🎣", layout="wide")
 st.title("🎣 Phishing Email Analyser")
 st.write(
-    "Upload a suspicious email or paste its full source to see where it really came from. "
+    "Upload a suspicious email or paste its full source to see who really sent it and where its links go. "
     "The email is only read, never opened: links aren't visited and attachments aren't run."
 )
 
@@ -39,8 +41,8 @@ if is_public():
 
 SAMPLES = Path(__file__).parent.parent / "samples"
 EXAMPLES = {
-    "Sample phishing email": "phishing_paypal_impersonation.eml",
-    "Sample genuine email": "genuine_newsletter.eml",
+    "phishing": "phishing_paypal_impersonation.eml",
+    "genuine": "genuine_newsletter.eml",
 }
 
 
@@ -52,15 +54,16 @@ def load_sample(name):
 
 tab_upload, tab_paste = st.tabs(["Upload .eml file", "Paste email source"])
 with tab_upload:
-    upload = st.file_uploader("Email file", type=["eml", "txt"], key=f"email_upload_{st.session_state.get('upload_n', 0)}")
+    upload = st.file_uploader("Email file (up to 5 MB)", type=["eml", "txt"],
+                              key=f"email_upload_{st.session_state.get('upload_n', 0)}")
     st.caption("If a file is uploaded, it's analysed instead of anything pasted.")
 with tab_paste:
     st.text_area("Full email source (headers and body)", height=200, key="email_text")
 
 c1, c2, c3 = st.columns([1, 2, 2])
 run = c1.button("Analyse", type="primary")
-c2.button("Load sample phishing email", on_click=load_sample, args=("Sample phishing email",))
-c3.button("Load sample genuine email", on_click=load_sample, args=("Sample genuine email",))
+c2.button("Load sample phishing email", on_click=load_sample, args=("phishing",))
+c3.button("Load sample genuine email", on_click=load_sample, args=("genuine",))
 
 if run:
     if upload is not None:
@@ -73,38 +76,63 @@ if run:
     if len(raw) > MAX_EMAIL_BYTES:
         st.error("That email is larger than 5 MB. Remove large attachments and try again.")
         st.stop()
-    if b"From:" not in raw[:50000] and b"from:" not in raw[:50000].lower():
+    if b"from:" not in raw[:50000].lower():
         st.warning("That doesn't look like an email's full source: there's no From header. "
                    "See \"How do I get an email's source?\" above.")
         st.stop()
-    st.session_state["report"] = analyse_headers(raw)
+    st.session_state["report"] = analyse_email(raw)
 
 r = st.session_state.get("report")
 if r:
-    ICON = {"Likely phishing": "🔴", "Suspicious": "🟠", "No red flags in headers": "🟢"}
+    ICON = {"Likely phishing": "🔴", "Suspicious": "🟠", "No red flags found": "🟢"}
     st.divider()
     st.subheader(f"{ICON[r.verdict]} {r.verdict} (risk score {r.score}/100)")
-    if r.verdict == "No red flags in headers":
-        st.caption("The headers look genuine. Links and attachments can still be dangerous, "
-                   "and a real account can be hacked, so read the content with care.")
+    if r.verdict == "No red flags found":
+        st.caption("Nothing suspicious in the sender details or links. A real account can still be hacked, "
+                   "so if the email asks for money, passwords or urgency, check with the sender another way.")
+
+    def show_flag(f, note_icon=True):
+        points = f" (+{f.points})" if f.points else ""
+        icon = "ℹ️ " if note_icon and not f.points else ""
+        st.markdown(f"**{icon}{safe_text(f.title)}**{points}  \n{safe_text(f.why)}")
 
     left, right = st.columns(2)
     with left:
-        st.markdown("**🚩 Red flags**")
-        scored = sorted([f for f in r.flags if f.points], key=lambda f: -f.points)
-        if not scored:
-            st.write("None found in the headers.")
-        for f in scored:
-            st.markdown(f"**{f.title}** (+{f.points})  \n{f.why}")
-        for f in [f for f in r.flags if not f.points]:
-            st.markdown(f"**ℹ️ {f.title}**  \n{f.why}")
+        st.markdown("#### 🚩 Red flags")
+        for area in ("Headers", "Links"):
+            flags = sorted([f for f in r.flags if f.area == area], key=lambda f: -f.points)
+            st.markdown(f"**{'From the sender details' if area == 'Headers' else 'From the links'}**")
+            if not [f for f in flags if f.points]:
+                st.caption("None found.")
+            for f in flags:
+                show_flag(f)
     with right:
-        st.markdown("**✅ Good signs**")
+        st.markdown("#### ✅ Good signs")
         if not r.good:
-            st.write("None.")
+            st.caption("None.")
         for g in r.good:
-            st.markdown(f"**{g.title}**  \n{g.why}")
+            show_flag(g, note_icon=False)
 
+    # ---------------------------------------------------------------- links
+    st.subheader("Links")
+    st.caption("Every link in the email, defanged so none can be clicked. They were read, not visited.")
+    PROBLEM_NAMES = {
+        "mismatch": "Text doesn't match", "at_trick": "@ trick", "lookalike": "Lookalike domain",
+        "form": "Form in email", "risky_file": "Downloads a program", "ip_host": "Bare IP address",
+        "punycode": "Disguised characters", "shortener": "Shortened link", "plain_http": "Not encrypted",
+    }
+    if r.links:
+        st.dataframe([{
+            "": "🚩" if [p for p in l.problems if p != "plain_http"] else "✅",
+            "Shown to the reader": defang(l.shown) if l.shown else "(the address itself)",
+            "Really goes to": defang(l.url) if l.url else "(no address)",
+            "Found in": l.found_in,
+            "Problems": ", ".join(PROBLEM_NAMES[p] for p in l.problems) or "None",
+        } for l in r.links], hide_index=True)
+    else:
+        st.write("No links found.")
+
+    # --------------------------------------------------------------- sender
     st.subheader("Sender")
     st.dataframe([
         {"Field": "Display name", "Value": r.from_name or "(none)", "What it means": "What most mail apps show. Anyone can type anything here."},

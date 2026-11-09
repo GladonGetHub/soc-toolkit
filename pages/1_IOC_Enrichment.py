@@ -21,7 +21,6 @@ from soc_toolkit.config import (MAIN_SOURCES, PUBLIC_MAX_PER_LOOKUP,
 from soc_toolkit.enrich import enrich
 from soc_toolkit.ioc import defang, parse_iocs
 
-st.set_page_config(page_title="IOC Enrichment", page_icon="🔎", layout="wide")
 st.title("🔎 IOC Enrichment")
 st.write("Paste indicators below, one per line. Defanged values like `194[.]165[.]16[.]11` are fine.")
 
