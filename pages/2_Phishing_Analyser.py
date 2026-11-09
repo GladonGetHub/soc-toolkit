@@ -7,9 +7,10 @@ sent it and where its links really go.
 Part 1: headers, SPF, DKIM, DMARC and the route the email took.
 Part 2: links.
 Part 3: attachments.
-Coming next: checking the IP, links and hashes with Module 1's sources.
+Part 4: checking the IP, link domains and file hashes with Module 1's sources.
 """
 
+from dataclasses import replace
 from pathlib import Path
 
 import streamlit as st
@@ -18,7 +19,9 @@ from soc_toolkit.attachments import RTLO
 from soc_toolkit.config import is_public
 from soc_toolkit.display import safe_text
 from soc_toolkit.email_analyser import analyse_email
+from soc_toolkit.email_intel import collect_iocs, intel_findings
 from soc_toolkit.ioc import defang
+from soc_toolkit.lookup import flagged_by, run_lookups, top_finding, within_public_limits
 from soc_toolkit.phishing import MAX_EMAIL_BYTES
 
 st.title("🎣 Phishing Email Analyser")
@@ -84,15 +87,65 @@ if run:
                    "See \"How do I get an email's source?\" above.")
         st.stop()
     st.session_state["report"] = analyse_email(raw)
+    st.session_state["report_n"] = st.session_state.get("report_n", 0) + 1
 
-r = st.session_state.get("report")
-if r:
+report = st.session_state.get("report")
+if report:
+    # Threat-intel results belong to the email they were run for
+    intel = st.session_state.get("intel")
+    if intel and intel["report_n"] != st.session_state.get("report_n"):
+        intel = None
+    r = replace(report, flags=report.flags + intel["flags"], good=report.good + intel["good"]) if intel else report
+
     ICON = {"Likely phishing": "🔴", "Suspicious": "🟠", "No red flags found": "🟢"}
     st.divider()
     st.subheader(f"{ICON[r.verdict]} {r.verdict} (risk score {r.score}/100)")
     if r.verdict == "No red flags found":
         st.caption("Nothing suspicious in the sender details, links or attachments. A real account can still be hacked, "
                    "so if the email asks for money, passwords or urgency, check with the sender another way.")
+
+    # ------------------------------------------------- threat intelligence
+    ROLE_ICON = {"Malicious": "🔴", "Suspicious": "🟠", "Clean": "🟢", "Unknown": "⚪", "Internal": "🔵"}
+    with st.container(border=True):
+        st.markdown("#### 🔎 Threat intelligence")
+        iocs, skipped = collect_iocs(report)
+        if intel:
+            st.dataframe([{
+                "What": row["role"],
+                "Indicator": f"{row['value'][:8]}…{row['value'][-8:]}" if row["type"] == "sha256" else defang(row["value"]),
+                "Verdict": f"{ROLE_ICON.get(row['verdict'], '⚪')} {row['verdict']}",
+                "Flagged by": flagged_by(row["results"]),
+                "Top finding": top_finding(row["results"]) or "No source had any data",
+            } for row in intel["rows"]], hide_index=True)
+            st.caption("Results are included in the risk score above. Open IOC Enrichment for each source's full answer.")
+        elif iocs:
+            NAMES = {"ip": ("IP address", "IP addresses"), "domain": ("website", "websites"),
+                     "sha256": ("file hash", "file hashes")}
+            counts = {}
+            for _, t, _ in iocs:
+                counts[t] = counts.get(t, 0) + 1
+            parts = [f"{n} {NAMES[t][n > 1]}" for t, n in counts.items()]
+            listed = " and ".join([", ".join(parts[:-1]), parts[-1]] if len(parts) > 1 else parts)
+            st.write(f"Check this email's {listed} against the threat-intel sources used by IOC Enrichment.")
+            st.caption("Only these indicators are sent, never the email itself. "
+                       + ("In the public version, add your own keys in the IOC Enrichment sidebar for more sources."
+                          if is_public() else ""))
+            if st.button("Check with threat intelligence", type="primary"):
+                to_check = within_public_limits([(v, t) for v, t, _ in iocs])
+                if to_check is not None:
+                    rows = run_lookups(to_check)
+                    roles = {v: role for v, _, role in iocs}
+                    for row in rows:
+                        row["role"] = roles[row["value"]]
+                    flags, good = intel_findings(rows)
+                    st.session_state["intel"] = {"report_n": st.session_state.get("report_n"), "rows": rows, "flags": flags, "good": good}
+                    st.rerun()
+        else:
+            st.write("Nothing in this email can be looked up.")
+        if skipped:
+            with st.expander(f"Not checked ({len(skipped)})"):
+                for item in skipped:
+                    st.markdown(f"- {safe_text(item)}")
 
     def show_flag(f, note_icon=True):
         points = f" (+{f.points})" if f.points else ""
@@ -104,6 +157,8 @@ if r:
         st.markdown("#### 🚩 Red flags")
         AREA_NAMES = {"Headers": "From the sender details", "Links": "From the links",
                       "Attachments": "From the attachments"}
+        if intel:
+            AREA_NAMES["Threat intel"] = "From threat intelligence"
         for area, label in AREA_NAMES.items():
             flags = sorted([f for f in r.flags if f.area == area], key=lambda f: -f.points)
             st.markdown(f"**{label}**")
@@ -208,8 +263,7 @@ if r:
         } for i, h in enumerate(r.hops)], hide_index=True)
     if r.origin_ip:
         st.markdown(f"**Where it entered the internet:** `{defang(r.origin_ip)}`")
-        st.caption("Copy this IP into IOC Enrichment to see if it's known for spam or attacks. "
-                   "This will happen automatically in a later update.")
+        st.caption("This is the IP that \"Check with threat intelligence\" looks up.")
 
     with st.expander("All headers (raw)"):
         st.code(r.raw_headers, language=None)

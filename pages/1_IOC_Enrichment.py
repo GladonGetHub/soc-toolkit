@@ -9,17 +9,13 @@ website, visitors get the free no-key sources and can add their own keys.
 """
 
 import csv
-import hashlib
 import io
-import time
-from dataclasses import asdict
 
 import streamlit as st
 
-from soc_toolkit.config import (MAIN_SOURCES, PUBLIC_MAX_PER_LOOKUP,
-                                PUBLIC_MAX_PER_SESSION, build_providers, is_public)
-from soc_toolkit.enrich import enrich
+from soc_toolkit.config import MAIN_SOURCES, PUBLIC_MAX_PER_LOOKUP, build_providers, is_public
 from soc_toolkit.ioc import defang, parse_iocs
+from soc_toolkit.lookup import flagged_by, run_lookups, visitor_keys, within_public_limits
 
 st.title("🔎 IOC Enrichment")
 st.write("Paste indicators below, one per line. Defanged values like `194[.]165[.]16[.]11` are fine.")
@@ -51,8 +47,7 @@ with st.sidebar:
                 st.text_input(label, type="password", key=f"key_{source}", help=f"Free key from {KEY_LINKS[source]}")
             st.button("Forget my keys", on_click=forget_keys)
 
-visitor_keys = {s: st.session_state.get(f"key_{s}", "") for s in MAIN_SOURCES} if public else {}
-providers, _ = build_providers(visitor_keys)
+providers, _ = build_providers(visitor_keys())
 
 with st.sidebar:
     st.subheader("Sources")
@@ -81,22 +76,6 @@ def short(value: str, ioc_type: str) -> str:
     return defang(value)
 
 
-def key_fingerprint(keys: dict) -> str:
-    """A one-way fingerprint of the visitor's keys, so cached results from one
-    visitor's keys are never handed to a visitor with different (or no) keys."""
-    joined = "|".join(f"{s}={keys.get(s, '')}" for s in sorted(keys))
-    return hashlib.sha256(joined.encode()).hexdigest()
-
-
-@st.cache_data(ttl=3600, show_spinner=False)
-def cached_lookup(value: str, ioc_type: str, fingerprint: str, _keys: dict):
-    """Cache results for an hour so repeat lookups don't burn API quota.
-    The leading underscore stops Streamlit storing the keys themselves."""
-    provs, _ = build_providers(_keys)
-    verdict, results = enrich(value, ioc_type, provs)
-    return verdict, [asdict(r) for r in results]
-
-
 sample = "194[.]165[.]16[.]11\n45.129.56.200\n8.8.8.8\n192.168.10.10\nhxxps://example[.]com/login"
 
 
@@ -119,34 +98,10 @@ if run:
     if not to_check:
         st.stop()
 
-    if public:
-        if len(to_check) > PUBLIC_MAX_PER_LOOKUP:
-            st.warning(f"The public version checks up to {PUBLIC_MAX_PER_LOOKUP} at a time, "
-                       f"so only the first {PUBLIC_MAX_PER_LOOKUP} were checked.")
-            to_check = to_check[:PUBLIC_MAX_PER_LOOKUP]
-        used = st.session_state.get("lookups_used", 0)
-        if used + len(to_check) > PUBLIC_MAX_PER_SESSION:
-            left = max(PUBLIC_MAX_PER_SESSION - used, 0)
-            st.error(f"The public version allows {PUBLIC_MAX_PER_SESSION} lookups per session and you have {left} left. "
-                     "To check more, run the toolkit on your own machine (see the GitHub page).")
-            st.stop()
-        st.session_state["lookups_used"] = used + len(to_check)
-
-    # The free VirusTotal key allows 4 lookups a minute, so pace big batches
-    pace = any(p.name == "VirusTotal" for p in providers) and len(to_check) > 4
-    if pace:
-        st.info(f"Free VirusTotal keys allow 4 lookups a minute. This batch will take about {len(to_check) // 4 + 1} minute(s).")
-
-    fingerprint = key_fingerprint(visitor_keys)
-    rows = []
-    bar = st.progress(0, text="Checking...")
-    for i, (value, ioc_type) in enumerate(to_check):
-        if pace and i > 0 and i % 4 == 0:
-            time.sleep(60)
-        verdict, results = cached_lookup(value, ioc_type, fingerprint, visitor_keys)
-        rows.append({"value": value, "type": ioc_type, "verdict": verdict, "results": results})
-        bar.progress((i + 1) / len(to_check), text=f"Checked {i + 1} of {len(to_check)}")
-    bar.empty()
+    to_check = within_public_limits(to_check)
+    if to_check is None:
+        st.stop()
+    rows = run_lookups(to_check)
     st.session_state["rows"] = rows
 
 rows = st.session_state.get("rows", [])
@@ -160,13 +115,6 @@ if rows:
         if r["verdict"] == "Internal":
             return "Internal address, not looked up. Investigate it in your own logs."
         return "None of the sources switched on can check this type. Add a key to switch on more."
-
-    def flagged_by(results):
-        """'3 of 5' = 3 sources scored it Malicious (50+) out of 5 that had an opinion."""
-        scored = [x for x in results if x["score"] is not None]
-        if not scored:
-            return "-"
-        return f"{sum(x['score'] >= 50 for x in scored)} of {len(scored)}"
 
     st.dataframe(
         [{

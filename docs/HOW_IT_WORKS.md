@@ -99,7 +99,7 @@ The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 54 checks (24 for Module 1, 30 for Module 2): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 58 checks (24 for Module 1, 34 for Module 2): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 
@@ -294,3 +294,44 @@ Email scanners can't open a locked archive, so the malware gets through. The pas
 
 **A user has already opened the attachment. What do you do?**
 Isolate the machine from the network, check the hash in threat intelligence, look in the EDR or SIEM for what ran afterwards, reset the user's passwords if it was a fake login page, and search for the same email in other mailboxes.
+
+---
+
+# How Module 2 works (part 4: threat intelligence)
+
+## The big picture
+
+Parts 1 to 3 judge an email by **how it's built**, like a detective examining a letter for forged stamps and a fake signature. Part 4 is the detective **asking around**: has anyone seen this sender before? This website? This file?
+
+That's what Module 1 already does, so Module 2 reuses it rather than repeating it. `soc_toolkit/email_intel.py` gathers the indicators from the email and hands them to the same 9 sources. The shared lookup code (caching, public limits, VirusTotal pacing) lives in `soc_toolkit/lookup.py`, which both pages use.
+
+## What gets checked, and what doesn't
+
+| Checked | Not checked |
+|---|---|
+| The IP where the email entered the internet | Internal addresses (10.x, 192.168.x and so on), which would leak your network layout |
+| The domain of every link | Documentation IPs such as 198.51.100.x, which only appear in examples |
+| The SHA256 of every attachment | Reserved test names such as `.example`, which can't exist on the internet |
+| | The email itself, its text or its attachments' contents |
+
+Only the indicators leave the machine, and only when the analyst clicks the button.
+
+## How results change the score
+
+| Threat intel verdict | Points | Example red flag |
+|---|---|---|
+| Malicious | 50 | **Sent from a known-bad IP:** AbuseIPDB, 100% abuse confidence |
+| Suspicious | 20 | **Link goes to a suspicious website** |
+
+A **known genuine file** in CIRCL's database is shown as a good sign. If nothing is known bad, the page says so, but adds that **new phishing sites often aren't listed yet**. A clean lookup isn't proof of safety; it only means nobody has reported it so far.
+
+## Questions an interviewer might ask
+
+**Why not just look everything up automatically?**
+Every lookup tells a third party what you're investigating, and free API quotas are small. A deliberate button keeps the analyst in control of what leaves the network.
+
+**The domain is clean in VirusTotal but the email still looks like phishing. What do you trust?**
+The evidence in the email. Attackers register fresh domains for each campaign, so threat intel often lags by hours or days. A brand-new lookalike domain with no reputation is itself suspicious.
+
+**Why do you skip internal IPs?**
+Sending them out reveals how your network is laid out, and outside services know nothing about private addresses anyway.
