@@ -13,6 +13,9 @@ Subject: Your November market update
 Date: Tue, 3 Nov 2026 16:02:05 +0000
 Message-ID: <a1b2c3d4e5@thornbury-wealth.example>
 MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="g1"
+
+--g1
 Content-Type: text/plain; charset="utf-8"
 
 Hello,
@@ -20,6 +23,18 @@ Hello,
 This month's market update is now in your client portal. Log in the usual way
 through our website; we will never ask for your password by email.
 
-Read our market notes: https://www.thornbury-wealth.example/insights/november
+The full update is attached as a PDF. Read our market notes: https://www.thornbury-wealth.example/insights/november
 
 Thornbury Wealth Partners
+
+--g1
+Content-Type: application/pdf; name="November_Market_Update.pdf"
+Content-Disposition: attachment; filename="November_Market_Update.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKMSAwIG9iaiA8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4gZW5kb2Jq
+CjIgMCBvYmogPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4gZW5kb2Jq
+CjMgMCBvYmogPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA1OTUg
+ODQyXSA+PiBlbmRvYmoKdHJhaWxlciA8PCAvUm9vdCAxIDAgUiA+PgolJUVPRgo=
+
+--g1--

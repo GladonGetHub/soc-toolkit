@@ -13,7 +13,7 @@ A set of small tools that take repetitive work off a SOC analyst, built as one S
 | # | Module | What it does | Status |
 |---|---|---|---|
 | 1 | IOC Enrichment | Check IPs, domains, URLs and file hashes against 9 threat-intel sources in one go | ✅ Ready |
-| 2 | Phishing Email Analyser | Check an email's sender, authentication and links for phishing | 🔨 In progress (headers and links done) |
+| 2 | Phishing Email Analyser | Check an email's sender, links and attachments for phishing | 🔨 In progress (headers, links and attachments done) |
 | 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | Planned |
 | 4 | Threat Feed Aggregator | Merge free threat feeds into one Splunk lookup | Planned |
 | 5 | Alert Triage Assistant | Enrich a SIEM alert and draft the case note | Planned |
@@ -88,15 +88,17 @@ The app picks the mode by itself: if the server has keys in `.env` it runs priva
 
 ## Module 2: Phishing Email Analyser
 
-Upload a suspicious email (`.eml`) or paste its source. The email is only read: links aren't visited and attachments aren't opened.
+Upload a suspicious email (`.eml`) or paste its source. The email is only read: links aren't visited, and attachments are never opened, run or saved.
 
 **Sender details:** SPF, DKIM and DMARC results, brand impersonation ("PayPal" in the name but not PayPal's domain), fake addresses in the display name, replies redirected to another domain, fake authentication headers planted by the sender, and the route the email took, including the IP where it entered the internet.
 
 **Links:** every link is pulled out and checked for text that doesn't match where it goes, lookalike domains (`paypa1.com`, `paypal-account-verify.com`), "@" tricks, bare IP addresses, shorteners, disguised characters, forms inside the email and links that download programs. All are shown defanged.
 
+**Attachments:** each file's first bytes are read to find what it *really* is, whatever its name says. Flags programs (including ones renamed to `.pdf`), double extensions like `invoice.pdf.exe`, hidden reversed text in file names, Office macros, HTML attachments, disk images, shortcuts, password-protected archives, archives hiding programs and PDFs with JavaScript. Each file's MD5, SHA1 and SHA256 hashes are shown, ready to check in Module 1.
+
 Each red flag adds points to one risk score, using the same scale as Module 1, and comes with a plain-English reason. Two fictional sample emails are included to try it with.
 
-> In progress: attachments, and checking the email's IP and links with Module 1's sources, are next.
+> Next: checking the email's IP, links and attachment hashes with Module 1's sources automatically.
 
 ## Getting started
 
@@ -151,11 +153,12 @@ soc-toolkit/
 │   ├── enrich.py            combines source scores into a verdict
 │   ├── phishing.py          email headers: who really sent it
 │   ├── links.py             email links: where they really go
+│   ├── attachments.py       email attachments: what the files really are
 │   ├── email_analyser.py    combines both into one risk score
 │   ├── display.py           shows email text safely (nothing clickable)
 │   └── config.py            loads API keys, picks private or public mode
 ├── samples/                 two fictional emails to try module 2 with
-├── tests/                   45 unit tests (no API keys needed)
+├── tests/                   54 unit tests (no API keys needed)
 ├── docs/                    how it works, and screenshots
 ├── .streamlit/config.toml   5 MB upload limit
 ├── .env.example             template for your API keys

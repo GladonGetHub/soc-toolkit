@@ -99,7 +99,7 @@ The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 45 checks (24 for Module 1, 21 for Module 2): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 54 checks (24 for Module 1, 30 for Module 2): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 
@@ -239,3 +239,58 @@ A shortener hides the destination, but plenty of genuine companies use them. A l
 
 **What did you do about false positives?**
 Real company domains are recognised, newsletter trackers aren't counted as mismatches, short brand names only match whole words, and every red flag shows its reason so the analyst can judge.
+
+---
+
+# How Module 2 works (part 3: attachments)
+
+## The big picture
+
+A file's name is just the label on a parcel. Anyone can write "invoice.pdf" on a box with a program inside. What a file **really** is shows in its first few bytes, its **magic number**, like the shape of what's in the box:
+
+| First bytes | What it really is |
+|---|---|
+| `%PDF` | PDF document |
+| `MZ` | Windows program |
+| `PK` | ZIP file (also Word, Excel and PowerPoint files, which are ZIPs inside) |
+| `D0 CF 11 E0` | Old-style Office file (.doc, .xls) |
+| `L 00 00 00` | Windows shortcut (.lnk) |
+| `CD001` (at byte 32769) | Disk image (.iso) |
+
+`soc_toolkit/attachments.py` reads each attachment's bytes **in memory** to find its real type, checks the name, and works out its hashes. Nothing is opened, run, unpacked or saved to disk. For ZIP files it reads only the list of names inside, the way you'd read a parcel's packing slip without opening the box.
+
+## The checks
+
+| Red flag | Points | Example | Why it matters |
+|---|---|---|---|
+| Attachment is a program | 50 | `update.exe`, `invoice.js` | Runs code the moment it's opened |
+| Attachment is a shortcut | 45 | `Invoice.lnk` | A shortcut can run any command |
+| Archive hides a program | 45 | `files.zip` containing `invoice.pdf.exe` | Gets the program past filters that only check the outer file |
+| Double file extension | 40 | `invoice.pdf.exe` | Windows hides the last part, so you see "invoice.pdf" |
+| Reversed text in the name | 40 | `invoice[hidden character]fdp.exe`, shown as `invoiceexe.pdf` | An invisible character makes "exe.pdf" display backwards |
+| Office file with macros | 40 | `.docm`, or a `.docx` containing `vbaProject.bin` | The classic "Enable content" trap |
+| File type disguised | 35 | `invoice.pdf` whose bytes start with `MZ` | The name lies about what the file is |
+| Disk image attached | 35 | `.iso`, `.img` | Files inside often escape scanning |
+| HTML file attached | 30 | `Invoice_8841.pdf.html` | Shows a fake login page from your own computer, with no link to block |
+| Password-protected archive | 30 | locked `.zip`, password in the email | Email security can't look inside |
+| PDF with active content | 25 | PDF containing `/JavaScript` or `/Launch` | Ordinary invoices don't need code |
+
+As with links, each kind of problem counts once per email.
+
+## Hashes: a file's fingerprint
+
+A hash is worked out from every byte of a file. Change one byte and the hash changes completely, so the same hash means the same file. Malware databases such as VirusTotal and MalwareBazaar store the hashes of known malware, so you can ask "have you seen this file before?" **without anyone opening it**. That's why the page shows MD5, SHA1 and SHA256 for each attachment. SHA256 is the one to use; MD5 and SHA1 are shown because older tools still ask for them.
+
+## Questions an interviewer might ask
+
+**How do you know what a file really is without opening it?**
+Read its first bytes, its magic number. A Windows program always starts with `MZ`, whatever it's called.
+
+**Why are HTML attachments dangerous? They're just web pages.**
+Opening one shows a page stored on your own computer. It can look exactly like a Microsoft login page, and because there's no link in the email, link filters have nothing to catch. This is often called HTML smuggling.
+
+**Why do attackers zip files with a password?**
+Email scanners can't open a locked archive, so the malware gets through. The password is usually written in the email, which is itself a warning sign.
+
+**A user has already opened the attachment. What do you do?**
+Isolate the machine from the network, check the hash in threat intelligence, look in the EDR or SIEM for what ran afterwards, reset the user's passwords if it was a fake login page, and search for the same email in other mailboxes.

@@ -6,13 +6,15 @@ sent it and where its links really go.
 
 Part 1: headers, SPF, DKIM, DMARC and the route the email took.
 Part 2: links.
-Coming next: attachments, and checking everything with Module 1's sources.
+Part 3: attachments.
+Coming next: checking the IP, links and hashes with Module 1's sources.
 """
 
 from pathlib import Path
 
 import streamlit as st
 
+from soc_toolkit.attachments import RTLO
 from soc_toolkit.config import is_public
 from soc_toolkit.display import safe_text
 from soc_toolkit.email_analyser import analyse_email
@@ -21,7 +23,8 @@ from soc_toolkit.phishing import MAX_EMAIL_BYTES
 
 st.title("🎣 Phishing Email Analyser")
 st.write(
-    "Upload a suspicious email or paste its full source to see who really sent it and where its links go. "
+    "Upload a suspicious email or paste its full source to see who really sent it, where its links go "
+    "and what its attachments really are. "
     "The email is only read, never opened: links aren't visited and attachments aren't run."
 )
 
@@ -88,7 +91,7 @@ if r:
     st.divider()
     st.subheader(f"{ICON[r.verdict]} {r.verdict} (risk score {r.score}/100)")
     if r.verdict == "No red flags found":
-        st.caption("Nothing suspicious in the sender details or links. A real account can still be hacked, "
+        st.caption("Nothing suspicious in the sender details, links or attachments. A real account can still be hacked, "
                    "so if the email asks for money, passwords or urgency, check with the sender another way.")
 
     def show_flag(f, note_icon=True):
@@ -99,9 +102,11 @@ if r:
     left, right = st.columns(2)
     with left:
         st.markdown("#### 🚩 Red flags")
-        for area in ("Headers", "Links"):
+        AREA_NAMES = {"Headers": "From the sender details", "Links": "From the links",
+                      "Attachments": "From the attachments"}
+        for area, label in AREA_NAMES.items():
             flags = sorted([f for f in r.flags if f.area == area], key=lambda f: -f.points)
-            st.markdown(f"**{'From the sender details' if area == 'Headers' else 'From the links'}**")
+            st.markdown(f"**{label}**")
             if not [f for f in flags if f.points]:
                 st.caption("None found.")
             for f in flags:
@@ -131,6 +136,38 @@ if r:
         } for l in r.links], hide_index=True)
     else:
         st.write("No links found.")
+
+    # ---------------------------------------------------------- attachments
+    st.subheader("Attachments")
+    st.caption("Each file's contents were read to see what it really is. Nothing was opened, run or saved.")
+    ATTACH_NAMES = {
+        "program": "Program", "shortcut": "Shortcut", "archive_program": "Archive hides a program",
+        "double_ext": "Double extension", "rtlo": "Reversed name", "macros": "Macros",
+        "disguised": "Type disguised", "disk_image": "Disk image", "html": "HTML page",
+        "locked_archive": "Password-protected", "pdf_active": "Active PDF content",
+    }
+
+    def size(n):
+        return f"{n / 1024:.1f} KB" if n >= 1024 else f"{n} bytes"
+
+    if r.attachments:
+        st.dataframe([{
+            "": "🚩" if a.problems else "✅",
+            "File name": a.name.replace(RTLO, "[hidden character]"),
+            "Size": size(a.size),
+            "Email says it is": a.declared_type,
+            "Really is": a.real_type,
+            "Problems": ", ".join(ATTACH_NAMES[p] for p in a.problems) or "None",
+            "SHA256": f"{a.sha256[:12]}…",
+        } for a in r.attachments], hide_index=True)
+        with st.expander("File hashes, to check in IOC Enrichment"):
+            st.caption("A hash is a file's fingerprint. Malware databases such as VirusTotal and MalwareBazaar "
+                       "can tell you if they've seen this exact file before, without anyone opening it.")
+            for a in r.attachments:
+                st.markdown(f"**{safe_text(a.name.replace(RTLO, '[hidden character]'))}**")
+                st.code(f"SHA256  {a.sha256}\nSHA1    {a.sha1}\nMD5     {a.md5}", language=None)
+    else:
+        st.write("No attachments.")
 
     # --------------------------------------------------------------- sender
     st.subheader("Sender")

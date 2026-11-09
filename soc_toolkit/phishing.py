@@ -113,6 +113,7 @@ class EmailReport:
     flags: list = field(default_factory=list)
     good: list = field(default_factory=list)
     links: list = field(default_factory=list)  # filled in by email_analyser.py
+    attachments: list = field(default_factory=list)  # filled in by email_analyser.py
     raw_headers: str = ""
 
     @property

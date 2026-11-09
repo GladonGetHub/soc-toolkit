@@ -18,6 +18,9 @@ Subject: Action required: your account has been limited
 Date: Tue, 3 Nov 2026 17:14:20 +0000
 Message-ID: <20261103171420.4471@mailer-cheap.example>
 MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="m1"
+
+--m1
 Content-Type: multipart/alternative; boundary="b1"
 
 --b1
@@ -26,7 +29,8 @@ Content-Type: text/plain; charset="utf-8"
 Dear Customer,
 
 We noticed unusual activity on your account and have limited what you can do.
-Confirm your details within 24 hours to avoid permanent suspension:
+Confirm your details within 24 hours to avoid permanent suspension, or open
+the attached invoice:
 https://paypal-account-verify.example/secure/login
 
 PayPal Security Team
@@ -41,3 +45,15 @@ Content-Type: text/html; charset="utf-8"
 <p>PayPal Security Team</p>
 
 --b1--
+
+--m1
+Content-Type: text/html; name="Invoice_8841.pdf.html"
+Content-Disposition: attachment; filename="Invoice_8841.pdf.html"
+Content-Transfer-Encoding: base64
+
+PCFET0NUWVBFIGh0bWw+CjxodG1sPjxoZWFkPjx0aXRsZT5UcmFpbmluZyBzYW1wbGU8L3RpdGxl
+PjwvaGVhZD4KPGJvZHk+PHA+VGhpcyBpcyBhIGhhcm1sZXNzIHRyYWluaW5nIHNhbXBsZSBmb3Ig
+dGhlIFNPQyBUb29sa2l0LgpJbiBhIHJlYWwgYXR0YWNrIHRoaXMgZmlsZSB3b3VsZCBzaG93IGEg
+ZmFrZSBsb2dpbiBwYWdlLjwvcD48L2JvZHk+PC9odG1sPgo=
+
+--m1--
