@@ -102,6 +102,36 @@ Each red flag adds points to one risk score, using the same scale as Module 1, a
 
 **Case note:** one click gives a plain-text write-up ready to paste into a ticket, with the verdict, recommended actions, every red flag, the defanged indicators, attachment hashes and the threat-intel results. The Message-ID is kept exactly as sent, so it can be used to search other mailboxes for the same email.
 
+### Screenshots
+
+**A fake PayPal email, caught from every angle.** The sender details, the link and the attachment all give it away, and threat intelligence confirms the IP it came from is a known attacker: flagged by 4 of 4 sources, with AbuseIPDB at 100% abuse confidence. The attachment's hash is unknown to every source, so it's marked Unknown rather than Clean.
+
+![Verdict and threat intelligence](docs/screenshots/module2/02_phishing_verdict_threat_intel.png)
+
+**Every red flag comes with a plain-English reason**, grouped by where it was found: the sender details, the links, the attachments and threat intelligence.
+
+![Red flags](docs/screenshots/module2/03_phishing_red_flags.png)
+
+**What you see isn't where it goes.** The link text says paypal.com but really goes to a lookalike domain, and the "PDF" invoice is really a web page with a double extension. Nothing is clicked or opened.
+
+![Links and attachments](docs/screenshots/module2/04_links_and_attachments.png)
+
+**The case note**, ready to paste into a ticket: verdict, recommended actions, red flags and defanged indicators.
+
+![Case note](docs/screenshots/module2/06_case_note.png)
+
+**A genuine email for comparison:** SPF, DKIM and DMARC all pass, the link goes where it says, and the attached PDF really is a PDF.
+
+![Genuine email](docs/screenshots/module2/07_genuine_email.png)
+
+<details>
+<summary>More screenshots: tests, authentication and route</summary>
+
+![Tests passing](docs/screenshots/module2/01_tests_passing.png)
+![Authentication and route](docs/screenshots/module2/05_authentication_and_route.png)
+
+</details>
+
 ## Getting started
 
 You need Python 3.10 or newer.

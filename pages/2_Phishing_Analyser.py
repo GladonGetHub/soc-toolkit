@@ -157,7 +157,7 @@ if report:
         st.caption("Everything you'd write up by hand: verdict, recommended action, red flags and defanged "
                    "indicators. Copy it with the icon at the top right of the box, or download it. "
                    + ("" if intel else "Run the threat intelligence check first to include its results."))
-        st.code(case_note, language=None)
+        st.code(case_note, language=None, wrap_lines=True)
         st.download_button("Download case note (.txt)", case_note, file_name="phishing_case_note.txt",
                            mime="text/plain")
 
