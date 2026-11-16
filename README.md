@@ -14,7 +14,7 @@ A set of small tools that take repetitive work off a SOC analyst, built as one S
 |---|---|---|---|
 | 1 | IOC Enrichment | Check IPs, domains, URLs and file hashes against 9 threat-intel sources in one go | ✅ Ready |
 | 2 | Phishing Email Analyser | Check an email's sender, links and attachments for phishing | ✅ Ready |
-| 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | 🔜 Next |
+| 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | 🔨 In progress (Linux done, Windows next) |
 | 4 | Threat Feed Aggregator | Merge free threat feeds into one Splunk lookup | Planned |
 | 5 | Alert Triage Assistant | Enrich a SIEM alert and draft the case note | Planned |
 | 6 | Shift Handover | Open incidents and notes for the next shift | Planned |
@@ -132,6 +132,22 @@ Each red flag adds points to one risk score, using the same scale as Module 1, a
 
 </details>
 
+## Module 3: Log Parser
+
+Upload a Linux `auth.log` and find password attacks hidden among thousands of normal lines. Each finding has a severity, a plain-English reason and its MITRE ATT&CK technique.
+
+| Finding | What it looks like | MITRE ATT&CK |
+|---|---|---|
+| **Success after failures** (Critical) | A login that works after 10+ failures in the hour before | T1078 Valid Accounts |
+| **Brute force** | 10+ failures on one account from one address within 10 minutes | T1110.001 Password Guessing |
+| **Password spraying** | One address trying 5+ real accounts, 3 or fewer guesses each | T1110.003 Password Spraying |
+| **Distributed attack** | 5+ addresses failing on the same account within 30 minutes | T1110 Brute Force |
+| **Username guessing** | 5+ attempts on accounts that don't exist (admin, test, oracle) | T1110.001 Password Guessing |
+
+It reads both the classic syslog timestamps and the newer ISO style, counts "message repeated N times" lines properly, and lists every source address and account with its failed and successful logins. A few typos followed by a successful login is normal and isn't flagged. Two fictional sample logs are included: one with all five attacks, and a normal day.
+
+> In progress: Windows Security events (4625, 4624, 4740), a timeline chart, threat intelligence for the attacking addresses and a case note.
+
 ## Getting started
 
 You need Python 3.10 or newer.
@@ -178,7 +194,8 @@ soc-toolkit/
 ├── home.py                  home page
 ├── pages/
 │   ├── 1_IOC_Enrichment.py  module 1 screen
-│   └── 2_Phishing_Analyser.py  module 2 screen
+│   ├── 2_Phishing_Analyser.py  module 2 screen
+│   └── 3_Log_Parser.py      module 3 screen
 ├── soc_toolkit/
 │   ├── ioc.py               detect, refang and defang indicators
 │   ├── sources.py           one class per threat-intel source
@@ -189,11 +206,12 @@ soc-toolkit/
 │   ├── email_analyser.py    combines headers, links and attachments into one risk score
 │   ├── email_intel.py       checks the email's IP, domains and hashes with module 1
 │   ├── case_note.py         writes the ticket-ready case note
+│   ├── logs.py              reads login logs and detects password attacks
 │   ├── lookup.py            shared lookups: caching, limits and pacing
 │   ├── display.py           shows email text safely (nothing clickable)
 │   └── config.py            loads API keys, picks private or public mode
-├── samples/                 two fictional emails to try module 2 with
-├── tests/                   63 unit tests (no API keys needed)
+├── samples/                 fictional emails and logs to try modules 2 and 3 with
+├── tests/                   73 unit tests (no API keys needed)
 ├── docs/                    how it works, and screenshots
 ├── .streamlit/config.toml   5 MB upload limit
 ├── .env.example             template for your API keys

@@ -15,5 +15,6 @@ pages = [
     st.Page("home.py", title="Home", icon="🛡️", default=True),
     st.Page("pages/1_IOC_Enrichment.py", title="IOC Enrichment", icon="🔎", url_path="IOC_Enrichment"),
     st.Page("pages/2_Phishing_Analyser.py", title="Phishing Email Analyser", icon="🎣", url_path="Phishing_Analyser"),
+    st.Page("pages/3_Log_Parser.py", title="Log Parser", icon="📜", url_path="Log_Parser"),
 ]
 st.navigation(pages).run()

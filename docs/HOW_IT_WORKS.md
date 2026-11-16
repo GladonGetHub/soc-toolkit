@@ -99,7 +99,7 @@ The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 63 checks (25 for Module 1, 38 for Module 2): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 73 checks (25 for Module 1, 38 for Module 2, 10 for Module 3): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 
@@ -380,3 +380,66 @@ So nobody clicks them by accident, including tools that preview links automatica
 
 **Why keep the Message-ID as it is?**
 It's the most reliable way to find every copy of the same email across mailboxes. Changing it would break the search.
+
+---
+
+# How Module 3 works (part 1: Linux login logs)
+
+## The big picture
+
+Every login attempt on a Linux server leaves a line in `/var/log/auth.log`, like a signature in a building's visitor book:
+
+```
+Nov 16 09:14:02 web01 sshd[4517]: Failed password for admin from 185.220.101.55 port 54963 ssh2
+Nov 16 09:19:56 web01 sshd[5038]: Accepted password for admin from 185.220.101.55 port 56782 ssh2
+```
+
+One failed login is a typo. Fifty-eight in six minutes from the same address is a machine guessing, and the `Accepted` line at the end means the guess worked. Real logs have thousands of lines, mostly normal (cron jobs, sessions opening and closing). `soc_toolkit/logs.py` reads the book and points at the suspicious pages.
+
+It works in two steps:
+1. **Parse:** pick out the SSH login lines and turn each one into an event: time, account, address, failed or successful.
+2. **Detect:** look for the patterns an analyst hunts for by hand.
+
+## The five patterns
+
+| Pattern | Everyday version | Rule |
+|---|---|---|
+| **Brute force** | Trying every key on a keyring in one door | One address, one account, 10+ failures in 10 minutes |
+| **Password spraying** | Trying one key in every door on the street, so no single door raises an alarm | One address, 5+ real accounts, 3 or fewer tries each, within 30 minutes |
+| **Distributed attack** | A gang taking turns at the same door | 5+ addresses failing on one account within 30 minutes |
+| **Username guessing** | Asking for people who don't work there | 5+ attempts on accounts the server doesn't have |
+| **Success after failures** | The door finally opens | A login that works within an hour of 10+ failures from the same address, or on the same account |
+
+The last one is **Critical**, because it means the attacker probably got in. It's mapped to **T1078 Valid Accounts**: from then on, the attacker is using a real account.
+
+## How "within 10 minutes" is counted
+
+The parser uses a **sliding window**. Picture a 10-minute-wide frame sliding along the timeline: at each event, the frame's right edge moves to that event, and any events older than 10 minutes drop out of the left edge. The biggest number of events ever inside the frame is the busiest burst. Counting this way means a slow trickle of failures spread over a day doesn't look like an attack, but a burst does.
+
+For spraying and distributed attacks, the frame counts **different** accounts or addresses rather than attempts, with a running tally of what's inside the frame. That keeps it fast: 20,000 failed logins take well under a second.
+
+## Avoiding false alarms
+
+- **Typos aren't attacks.** Bob failing twice and then logging in isn't flagged, because it's under every threshold.
+- **Spraying needs real accounts.** Guesses at accounts that don't exist get their own "username guessing" finding instead of also counting as spraying.
+- **No double counting.** sshd writes "Invalid user oracle" and then "Failed password for invalid user oracle" for the same attempt; only the second is counted.
+- **"message repeated 3 times"** lines, where syslog collapses identical lines, count as 3 attempts, not 1.
+
+## Things about logs worth knowing
+
+- **Classic syslog lines have no year** ("Nov 16 09:14:02"), so the page asks which year the log is from. Newer Ubuntu releases use full ISO timestamps (`2026-11-16T09:14:02.123456+00:00`), which the parser also reads.
+- **Where to find it:** `/var/log/auth.log` on Ubuntu and Debian, `/var/log/secure` on Red Hat and CentOS, or `journalctl -u ssh` on systems that use the journal.
+
+## Questions an interviewer might ask
+
+**What's the difference between brute force and password spraying?**
+Brute force tries many passwords on one account and soon trips account lockout. Spraying tries one or two common passwords across many accounts, so each account sees only a failure or two and nothing locks.
+
+**You see a successful login after hundreds of failures. What do you do?**
+Treat the account as compromised: disable it or reset the password, block the address, end its sessions, and check what it did after logging in (commands run, files changed, new accounts or SSH keys added, connections to other servers).
+
+**How would you stop SSH brute force in the first place?**
+Turn off password logins and use SSH keys, don't allow root to log in directly, put SSH behind a VPN or allow-list, and use a tool like fail2ban to block addresses after repeated failures.
+
+**How does this relate to a SIEM?**
+It's the same logic as a SIEM detection rule, such as a Splunk search that counts failures by source and account over a time window, written from first principles. Building it by hand shows how the rule works and where its thresholds come from.

@@ -1,0 +1,238 @@
+Nov 16 00:17:00 web01 CRON[4323]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 16 02:17:00 web01 CRON[4339]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 16 04:17:00 web01 systemd[4356]: Started session-42.scope - Session 42 of User alice.
+Nov 16 06:17:00 web01 CRON[4367]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 16 08:02:35 web01 sshd[4239]: Accepted publickey for alice from 10.0.0.15 port 56022 ssh2
+Nov 16 08:02:35 web01 sshd[4240]: pam_unix(sshd:session): session opened for user alice(uid=1044) by (uid=0)
+Nov 16 08:17:00 web01 systemd[4392]: Started session-42.scope - Session 42 of User alice.
+Nov 16 08:30:59 web01 sshd[4249]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=10.0.0.22  user=bob
+Nov 16 08:30:59 web01 sshd[4255]: Failed password for bob from 10.0.0.22 port 58776 ssh2
+Nov 16 08:31:10 web01 sshd[4261]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=10.0.0.22  user=bob
+Nov 16 08:31:10 web01 sshd[4267]: Failed password for bob from 10.0.0.22 port 62783 ssh2
+Nov 16 08:31:19 web01 sshd[4275]: Accepted password for bob from 10.0.0.22 port 59476 ssh2
+Nov 16 08:31:19 web01 sshd[4283]: pam_unix(sshd:session): session opened for user bob(uid=1031) by (uid=0)
+Nov 16 09:07:10 web01 sshd[4288]: Accepted publickey for carol from 10.0.0.31 port 43066 ssh2
+Nov 16 09:07:10 web01 sshd[4296]: pam_unix(sshd:session): session opened for user carol(uid=1005) by (uid=0)
+Nov 16 09:14:02 web01 sshd[4508]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:14:02 web01 sshd[4517]: Failed password for admin from 185.220.101.55 port 54963 ssh2
+Nov 16 09:14:09 web01 sshd[4524]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:14:09 web01 sshd[4531]: Failed password for admin from 185.220.101.55 port 53073 ssh2
+Nov 16 09:14:13 web01 sshd[4539]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:14:13 web01 sshd[4546]: Failed password for admin from 185.220.101.55 port 60784 ssh2
+Nov 16 09:14:17 web01 sshd[4550]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:14:17 web01 sshd[4554]: Failed password for admin from 185.220.101.55 port 42206 ssh2
+Nov 16 09:14:24 web01 sshd[4557]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:14:24 web01 sshd[4563]: Failed password for admin from 185.220.101.55 port 43602 ssh2
+Nov 16 09:14:32 web01 sshd[4564]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:14:32 web01 sshd[4565]: Failed password for admin from 185.220.101.55 port 43354 ssh2
+Nov 16 09:14:40 web01 sshd[4568]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:14:40 web01 sshd[4570]: Failed password for admin from 185.220.101.55 port 57583 ssh2
+Nov 16 09:14:46 web01 sshd[4571]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:14:46 web01 sshd[4575]: Failed password for admin from 185.220.101.55 port 42304 ssh2
+Nov 16 09:14:54 web01 sshd[4582]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:14:54 web01 sshd[4587]: Failed password for admin from 185.220.101.55 port 44867 ssh2
+Nov 16 09:15:00 web01 sshd[4593]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:15:00 web01 sshd[4595]: Failed password for admin from 185.220.101.55 port 55536 ssh2
+Nov 16 09:15:04 web01 sshd[4603]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:15:04 web01 sshd[4611]: Failed password for admin from 185.220.101.55 port 55269 ssh2
+Nov 16 09:15:11 web01 sshd[4616]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:15:11 web01 sshd[4619]: Failed password for admin from 185.220.101.55 port 42814 ssh2
+Nov 16 09:15:15 web01 sshd[4625]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:15:15 web01 sshd[4630]: Failed password for admin from 185.220.101.55 port 64259 ssh2
+Nov 16 09:15:22 web01 sshd[4633]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:15:22 web01 sshd[4634]: Failed password for admin from 185.220.101.55 port 56919 ssh2
+Nov 16 09:15:27 web01 sshd[4643]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:15:27 web01 sshd[4646]: Failed password for admin from 185.220.101.55 port 51853 ssh2
+Nov 16 09:15:36 web01 sshd[4655]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:15:36 web01 sshd[4664]: Failed password for admin from 185.220.101.55 port 40886 ssh2
+Nov 16 09:15:42 web01 sshd[4666]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:15:42 web01 sshd[4671]: Failed password for admin from 185.220.101.55 port 62812 ssh2
+Nov 16 09:15:50 web01 sshd[4677]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:15:50 web01 sshd[4683]: Failed password for admin from 185.220.101.55 port 45473 ssh2
+Nov 16 09:15:55 web01 sshd[4692]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:15:55 web01 sshd[4701]: Failed password for admin from 185.220.101.55 port 57746 ssh2
+Nov 16 09:16:01 web01 sshd[4705]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:16:01 web01 sshd[4709]: Failed password for admin from 185.220.101.55 port 60094 ssh2
+Nov 16 09:16:06 web01 sshd[4716]: message repeated 3 times: [ Failed password for admin from 185.220.101.55 port 52211 ssh2]
+Nov 16 09:16:15 web01 sshd[4720]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:16:15 web01 sshd[4729]: Failed password for admin from 185.220.101.55 port 46550 ssh2
+Nov 16 09:16:22 web01 sshd[4735]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:16:22 web01 sshd[4736]: Failed password for admin from 185.220.101.55 port 63953 ssh2
+Nov 16 09:16:26 web01 sshd[4741]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:16:26 web01 sshd[4746]: Failed password for admin from 185.220.101.55 port 55474 ssh2
+Nov 16 09:16:31 web01 sshd[4752]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:16:31 web01 sshd[4758]: Failed password for admin from 185.220.101.55 port 54654 ssh2
+Nov 16 09:16:37 web01 sshd[4760]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:16:37 web01 sshd[4762]: Failed password for admin from 185.220.101.55 port 47224 ssh2
+Nov 16 09:16:42 web01 sshd[4770]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:16:42 web01 sshd[4776]: Failed password for admin from 185.220.101.55 port 46445 ssh2
+Nov 16 09:16:47 web01 sshd[4784]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:16:47 web01 sshd[4785]: Failed password for admin from 185.220.101.55 port 60449 ssh2
+Nov 16 09:16:54 web01 sshd[4791]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:16:54 web01 sshd[4793]: Failed password for admin from 185.220.101.55 port 61074 ssh2
+Nov 16 09:17:03 web01 sshd[4795]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:17:03 web01 sshd[4799]: Failed password for admin from 185.220.101.55 port 52731 ssh2
+Nov 16 09:17:10 web01 sshd[4802]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:17:10 web01 sshd[4808]: Failed password for admin from 185.220.101.55 port 54218 ssh2
+Nov 16 09:17:14 web01 sshd[4815]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:17:14 web01 sshd[4822]: Failed password for admin from 185.220.101.55 port 55176 ssh2
+Nov 16 09:17:23 web01 sshd[4824]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:17:23 web01 sshd[4827]: Failed password for admin from 185.220.101.55 port 63750 ssh2
+Nov 16 09:17:28 web01 sshd[4830]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:17:28 web01 sshd[4833]: Failed password for admin from 185.220.101.55 port 40902 ssh2
+Nov 16 09:17:36 web01 sshd[4841]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:17:36 web01 sshd[4844]: Failed password for admin from 185.220.101.55 port 61491 ssh2
+Nov 16 09:17:44 web01 sshd[4852]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:17:44 web01 sshd[4858]: Failed password for admin from 185.220.101.55 port 61537 ssh2
+Nov 16 09:17:49 web01 sshd[4867]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:17:49 web01 sshd[4870]: Failed password for admin from 185.220.101.55 port 57966 ssh2
+Nov 16 09:17:53 web01 sshd[4871]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:17:53 web01 sshd[4873]: Failed password for admin from 185.220.101.55 port 63801 ssh2
+Nov 16 09:18:01 web01 sshd[4876]: message repeated 3 times: [ Failed password for admin from 185.220.101.55 port 52211 ssh2]
+Nov 16 09:18:08 web01 sshd[4880]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:18:08 web01 sshd[4881]: Failed password for admin from 185.220.101.55 port 46915 ssh2
+Nov 16 09:18:14 web01 sshd[4885]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:18:14 web01 sshd[4894]: Failed password for admin from 185.220.101.55 port 49599 ssh2
+Nov 16 09:18:19 web01 sshd[4900]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:18:19 web01 sshd[4909]: Failed password for admin from 185.220.101.55 port 48498 ssh2
+Nov 16 09:18:26 web01 sshd[4912]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:18:26 web01 sshd[4918]: Failed password for admin from 185.220.101.55 port 41995 ssh2
+Nov 16 09:18:33 web01 sshd[4927]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:18:33 web01 sshd[4936]: Failed password for admin from 185.220.101.55 port 53783 ssh2
+Nov 16 09:18:38 web01 sshd[4945]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:18:38 web01 sshd[4954]: Failed password for admin from 185.220.101.55 port 44975 ssh2
+Nov 16 09:18:46 web01 sshd[4955]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:18:46 web01 sshd[4958]: Failed password for admin from 185.220.101.55 port 54422 ssh2
+Nov 16 09:18:54 web01 sshd[4959]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:18:54 web01 sshd[4962]: Failed password for admin from 185.220.101.55 port 44908 ssh2
+Nov 16 09:18:59 web01 sshd[4970]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:18:59 web01 sshd[4972]: Failed password for admin from 185.220.101.55 port 60286 ssh2
+Nov 16 09:19:07 web01 sshd[4973]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:19:07 web01 sshd[4982]: Failed password for admin from 185.220.101.55 port 50681 ssh2
+Nov 16 09:19:15 web01 sshd[4991]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:19:15 web01 sshd[4993]: Failed password for admin from 185.220.101.55 port 55810 ssh2
+Nov 16 09:19:23 web01 sshd[4994]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:19:23 web01 sshd[4998]: Failed password for admin from 185.220.101.55 port 48142 ssh2
+Nov 16 09:19:29 web01 sshd[4999]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:19:29 web01 sshd[5008]: Failed password for admin from 185.220.101.55 port 43202 ssh2
+Nov 16 09:19:36 web01 sshd[5017]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:19:36 web01 sshd[5019]: Failed password for admin from 185.220.101.55 port 40913 ssh2
+Nov 16 09:19:43 web01 sshd[5025]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=185.220.101.55  user=admin
+Nov 16 09:19:43 web01 sshd[5034]: Failed password for admin from 185.220.101.55 port 60071 ssh2
+Nov 16 09:19:56 web01 sshd[5038]: Accepted password for admin from 185.220.101.55 port 56782 ssh2
+Nov 16 09:19:56 web01 sshd[5043]: pam_unix(sshd:session): session opened for user admin(uid=1037) by (uid=0)
+Nov 16 10:02:00 web01 sshd[5051]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=alice
+Nov 16 10:02:00 web01 sshd[5060]: Failed password for alice from 203.0.113.77 port 56651 ssh2
+Nov 16 10:03:21 web01 sshd[5068]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=alice
+Nov 16 10:03:21 web01 sshd[5072]: Failed password for alice from 203.0.113.77 port 56638 ssh2
+Nov 16 10:04:35 web01 sshd[5081]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=bob
+Nov 16 10:04:35 web01 sshd[5090]: Failed password for bob from 203.0.113.77 port 48506 ssh2
+Nov 16 10:06:02 web01 sshd[5094]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=bob
+Nov 16 10:06:02 web01 sshd[5097]: Failed password for bob from 203.0.113.77 port 54664 ssh2
+Nov 16 10:06:58 web01 sshd[5099]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=carol
+Nov 16 10:06:58 web01 sshd[5107]: Failed password for carol from 203.0.113.77 port 52856 ssh2
+Nov 16 10:07:48 web01 sshd[5109]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=carol
+Nov 16 10:07:48 web01 sshd[5113]: Failed password for carol from 203.0.113.77 port 61992 ssh2
+Nov 16 10:08:45 web01 sshd[5115]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=dave
+Nov 16 10:08:45 web01 sshd[5120]: Failed password for dave from 203.0.113.77 port 46969 ssh2
+Nov 16 10:10:05 web01 sshd[5122]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=dave
+Nov 16 10:10:05 web01 sshd[5128]: Failed password for dave from 203.0.113.77 port 45060 ssh2
+Nov 16 10:10:44 web01 sshd[5133]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=erin
+Nov 16 10:10:44 web01 sshd[5141]: Failed password for erin from 203.0.113.77 port 44497 ssh2
+Nov 16 10:11:28 web01 sshd[5143]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=erin
+Nov 16 10:11:28 web01 sshd[5151]: Failed password for erin from 203.0.113.77 port 53050 ssh2
+Nov 16 10:12:08 web01 sshd[5155]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=frank
+Nov 16 10:12:08 web01 sshd[5162]: Failed password for frank from 203.0.113.77 port 45290 ssh2
+Nov 16 10:13:10 web01 sshd[5169]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=frank
+Nov 16 10:13:10 web01 sshd[5176]: Failed password for frank from 203.0.113.77 port 51112 ssh2
+Nov 16 10:13:52 web01 sshd[5182]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=grace
+Nov 16 10:13:52 web01 sshd[5184]: Failed password for grace from 203.0.113.77 port 50437 ssh2
+Nov 16 10:15:08 web01 sshd[5190]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=grace
+Nov 16 10:15:08 web01 sshd[5196]: Failed password for grace from 203.0.113.77 port 40638 ssh2
+Nov 16 10:16:13 web01 sshd[5204]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=heidi
+Nov 16 10:16:13 web01 sshd[5205]: Failed password for heidi from 203.0.113.77 port 54432 ssh2
+Nov 16 10:17:00 web01 systemd[4411]: Started session-42.scope - Session 42 of User alice.
+Nov 16 10:17:07 web01 sshd[5211]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.77  user=heidi
+Nov 16 10:17:07 web01 sshd[5216]: Failed password for heidi from 203.0.113.77 port 56955 ssh2
+Nov 16 11:00:00 web01 sshd[5218]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.10  user=root
+Nov 16 11:00:00 web01 sshd[5222]: Failed password for root from 198.51.100.10 port 43697 ssh2
+Nov 16 11:00:26 web01 sshd[5224]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.11  user=root
+Nov 16 11:00:26 web01 sshd[5229]: Failed password for root from 198.51.100.11 port 48702 ssh2
+Nov 16 11:00:48 web01 sshd[5232]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.12  user=root
+Nov 16 11:00:48 web01 sshd[5235]: Failed password for root from 198.51.100.12 port 48861 ssh2
+Nov 16 11:01:35 web01 sshd[5240]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.13  user=root
+Nov 16 11:01:35 web01 sshd[5243]: Failed password for root from 198.51.100.13 port 53302 ssh2
+Nov 16 11:02:29 web01 sshd[5252]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.14  user=root
+Nov 16 11:02:29 web01 sshd[5260]: Failed password for root from 198.51.100.14 port 58697 ssh2
+Nov 16 11:03:09 web01 sshd[5262]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.15  user=root
+Nov 16 11:03:09 web01 sshd[5263]: Failed password for root from 198.51.100.15 port 49144 ssh2
+Nov 16 11:03:40 web01 sshd[5270]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.10  user=root
+Nov 16 11:03:40 web01 sshd[5275]: Failed password for root from 198.51.100.10 port 42372 ssh2
+Nov 16 11:04:01 web01 sshd[5277]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.11  user=root
+Nov 16 11:04:01 web01 sshd[5279]: Failed password for root from 198.51.100.11 port 48537 ssh2
+Nov 16 11:04:59 web01 sshd[5283]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.12  user=root
+Nov 16 11:04:59 web01 sshd[5288]: Failed password for root from 198.51.100.12 port 42183 ssh2
+Nov 16 11:05:26 web01 sshd[5296]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.13  user=root
+Nov 16 11:05:26 web01 sshd[5302]: Failed password for root from 198.51.100.13 port 40378 ssh2
+Nov 16 11:06:21 web01 sshd[5309]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.14  user=root
+Nov 16 11:06:21 web01 sshd[5312]: Failed password for root from 198.51.100.14 port 48777 ssh2
+Nov 16 11:06:43 web01 sshd[5321]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.15  user=root
+Nov 16 11:06:43 web01 sshd[5325]: Failed password for root from 198.51.100.15 port 63250 ssh2
+Nov 16 11:07:10 web01 sshd[5328]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.10  user=root
+Nov 16 11:07:10 web01 sshd[5329]: Failed password for root from 198.51.100.10 port 48581 ssh2
+Nov 16 11:07:41 web01 sshd[5333]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.11  user=root
+Nov 16 11:07:41 web01 sshd[5338]: Failed password for root from 198.51.100.11 port 50223 ssh2
+Nov 16 11:08:34 web01 sshd[5342]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.12  user=root
+Nov 16 11:08:34 web01 sshd[5350]: Failed password for root from 198.51.100.12 port 49501 ssh2
+Nov 16 11:09:26 web01 sshd[5353]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.13  user=root
+Nov 16 11:09:26 web01 sshd[5359]: Failed password for root from 198.51.100.13 port 48864 ssh2
+Nov 16 11:09:47 web01 sshd[5364]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.14  user=root
+Nov 16 11:09:47 web01 sshd[5365]: Failed password for root from 198.51.100.14 port 41210 ssh2
+Nov 16 11:10:08 web01 sshd[5374]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.15  user=root
+Nov 16 11:10:08 web01 sshd[5378]: Failed password for root from 198.51.100.15 port 58056 ssh2
+Nov 16 11:11:00 web01 sshd[5386]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.10  user=root
+Nov 16 11:11:00 web01 sshd[5394]: Failed password for root from 198.51.100.10 port 48050 ssh2
+Nov 16 11:11:26 web01 sshd[5401]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.11  user=root
+Nov 16 11:11:26 web01 sshd[5409]: Failed password for root from 198.51.100.11 port 61512 ssh2
+Nov 16 11:12:20 web01 sshd[5416]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.12  user=root
+Nov 16 11:12:20 web01 sshd[5421]: Failed password for root from 198.51.100.12 port 56603 ssh2
+Nov 16 11:12:53 web01 sshd[5425]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.13  user=root
+Nov 16 11:12:53 web01 sshd[5429]: Failed password for root from 198.51.100.13 port 51229 ssh2
+Nov 16 11:13:53 web01 sshd[5432]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.14  user=root
+Nov 16 11:13:53 web01 sshd[5438]: Failed password for root from 198.51.100.14 port 53261 ssh2
+Nov 16 11:14:16 web01 sshd[5441]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.15  user=root
+Nov 16 11:14:16 web01 sshd[5443]: Failed password for root from 198.51.100.15 port 40467 ssh2
+Nov 16 12:10:00 web01 sshd[5448]: Invalid user oracle from 192.0.2.44 port 64277
+Nov 16 12:10:00 web01 sshd[5455]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.0.2.44
+Nov 16 12:10:00 web01 sshd[5456]: Failed password for invalid user oracle from 192.0.2.44 port 45349 ssh2
+Nov 16 12:10:03 web01 sshd[5463]: Invalid user test from 192.0.2.44 port 61798
+Nov 16 12:10:03 web01 sshd[5472]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.0.2.44
+Nov 16 12:10:03 web01 sshd[5477]: Failed password for invalid user test from 192.0.2.44 port 61972 ssh2
+Nov 16 12:10:10 web01 sshd[5482]: Invalid user ubuntu from 192.0.2.44 port 47936
+Nov 16 12:10:10 web01 sshd[5483]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.0.2.44
+Nov 16 12:10:10 web01 sshd[5486]: Failed password for invalid user ubuntu from 192.0.2.44 port 55055 ssh2
+Nov 16 12:10:14 web01 sshd[5494]: Invalid user pi from 192.0.2.44 port 48815
+Nov 16 12:10:14 web01 sshd[5495]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.0.2.44
+Nov 16 12:10:14 web01 sshd[5501]: Failed password for invalid user pi from 192.0.2.44 port 48625 ssh2
+Nov 16 12:10:19 web01 sshd[5507]: Invalid user ftp from 192.0.2.44 port 57926
+Nov 16 12:10:19 web01 sshd[5511]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.0.2.44
+Nov 16 12:10:19 web01 sshd[5516]: Failed password for invalid user ftp from 192.0.2.44 port 41128 ssh2
+Nov 16 12:10:23 web01 sshd[5519]: Invalid user postgres from 192.0.2.44 port 51684
+Nov 16 12:10:23 web01 sshd[5520]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.0.2.44
+Nov 16 12:10:23 web01 sshd[5527]: Failed password for invalid user postgres from 192.0.2.44 port 50988 ssh2
+Nov 16 12:10:26 web01 sshd[5532]: Invalid user guest from 192.0.2.44 port 55553
+Nov 16 12:10:26 web01 sshd[5541]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.0.2.44
+Nov 16 12:10:26 web01 sshd[5545]: Failed password for invalid user guest from 192.0.2.44 port 61496 ssh2
+Nov 16 12:10:30 web01 sshd[5546]: Invalid user user from 192.0.2.44 port 56539
+Nov 16 12:10:30 web01 sshd[5548]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.0.2.44
+Nov 16 12:10:30 web01 sshd[5550]: Failed password for invalid user user from 192.0.2.44 port 48656 ssh2
+Nov 16 12:17:00 web01 CRON[4427]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 16 13:13:06 web01 sshd[4301]: Accepted publickey for alice from 10.0.0.15 port 41988 ssh2
+Nov 16 13:13:06 web01 sshd[4309]: pam_unix(sshd:session): session opened for user alice(uid=1044) by (uid=0)
+Nov 16 14:17:00 web01 CRON[4443]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 16 15:46:51 web01 sshd[4316]: Accepted publickey for dave from 10.0.0.40 port 63482 ssh2
+Nov 16 15:46:51 web01 sshd[4322]: pam_unix(sshd:session): session opened for user dave(uid=1025) by (uid=0)
+Nov 16 16:17:00 web01 systemd[4456]: Started session-42.scope - Session 42 of User alice.
+Nov 16 18:17:00 web01 CRON[4460]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 16 20:17:00 web01 systemd[4480]: Started session-42.scope - Session 42 of User alice.
+Nov 16 22:17:00 web01 sshd[4507]: Received disconnect from 10.0.0.15 port 51234:11: disconnected by user

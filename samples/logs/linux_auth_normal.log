@@ -1,0 +1,26 @@
+Nov 16 00:17:00 web01 sshd[4060]: Received disconnect from 10.0.0.15 port 51234:11: disconnected by user
+Nov 16 02:17:00 web01 CRON[4063]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 16 04:17:00 web01 sshd[4091]: Received disconnect from 10.0.0.15 port 51234:11: disconnected by user
+Nov 16 06:17:00 web01 systemd[4096]: Started session-42.scope - Session 42 of User alice.
+Nov 16 08:05:31 web01 sshd[4007]: Accepted publickey for alice from 10.0.0.15 port 44943 ssh2
+Nov 16 08:05:31 web01 sshd[4008]: pam_unix(sshd:session): session opened for user alice(uid=1044) by (uid=0)
+Nov 16 08:17:00 web01 sshd[4113]: Received disconnect from 10.0.0.15 port 51234:11: disconnected by user
+Nov 16 08:30:54 web01 sshd[4017]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=10.0.0.22  user=bob
+Nov 16 08:30:54 web01 sshd[4023]: Failed password for bob from 10.0.0.22 port 43084 ssh2
+Nov 16 08:31:05 web01 sshd[4024]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=10.0.0.22  user=bob
+Nov 16 08:31:05 web01 sshd[4028]: Failed password for bob from 10.0.0.22 port 56627 ssh2
+Nov 16 08:31:14 web01 sshd[4030]: Accepted password for bob from 10.0.0.22 port 41228 ssh2
+Nov 16 08:31:14 web01 sshd[4037]: pam_unix(sshd:session): session opened for user bob(uid=1031) by (uid=0)
+Nov 16 09:13:08 web01 sshd[4041]: Accepted publickey for carol from 10.0.0.31 port 42289 ssh2
+Nov 16 09:13:08 web01 sshd[4043]: pam_unix(sshd:session): session opened for user carol(uid=1005) by (uid=0)
+Nov 16 10:17:00 web01 sshd[4126]: Received disconnect from 10.0.0.15 port 51234:11: disconnected by user
+Nov 16 12:17:00 web01 systemd[4142]: Started session-42.scope - Session 42 of User alice.
+Nov 16 13:21:24 web01 sshd[4044]: Accepted publickey for alice from 10.0.0.15 port 53910 ssh2
+Nov 16 13:21:24 web01 sshd[4046]: pam_unix(sshd:session): session opened for user alice(uid=1044) by (uid=0)
+Nov 16 14:17:00 web01 CRON[4156]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 16 15:45:48 web01 sshd[4047]: Accepted publickey for dave from 10.0.0.40 port 60664 ssh2
+Nov 16 15:45:48 web01 sshd[4054]: pam_unix(sshd:session): session opened for user dave(uid=1025) by (uid=0)
+Nov 16 16:17:00 web01 sshd[4176]: Received disconnect from 10.0.0.15 port 51234:11: disconnected by user
+Nov 16 18:17:00 web01 systemd[4190]: Started session-42.scope - Session 42 of User alice.
+Nov 16 20:17:00 web01 CRON[4206]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 16 22:17:00 web01 systemd[4229]: Started session-42.scope - Session 42 of User alice.
