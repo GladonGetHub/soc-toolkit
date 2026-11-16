@@ -14,7 +14,7 @@ A set of small tools that take repetitive work off a SOC analyst, built as one S
 |---|---|---|---|
 | 1 | IOC Enrichment | Check IPs, domains, URLs and file hashes against 9 threat-intel sources in one go | ✅ Ready |
 | 2 | Phishing Email Analyser | Check an email's sender, links and attachments for phishing | ✅ Ready |
-| 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | 🔨 In progress (Linux done, Windows next) |
+| 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | 🔨 In progress (Linux and Windows done) |
 | 4 | Threat Feed Aggregator | Merge free threat feeds into one Splunk lookup | Planned |
 | 5 | Alert Triage Assistant | Enrich a SIEM alert and draft the case note | Planned |
 | 6 | Shift Handover | Open incidents and notes for the next shift | Planned |
@@ -134,7 +134,7 @@ Each red flag adds points to one risk score, using the same scale as Module 1, a
 
 ## Module 3: Log Parser
 
-Upload a Linux `auth.log` and find password attacks hidden among thousands of normal lines. Each finding has a severity, a plain-English reason and its MITRE ATT&CK technique.
+Upload a Linux `auth.log`, or Windows Security events from Event Viewer (XML) or a SIEM export (CSV), and find password attacks hidden among thousands of normal entries. Each finding has a severity, a plain-English reason and its MITRE ATT&CK technique.
 
 | Finding | What it looks like | MITRE ATT&CK |
 |---|---|---|
@@ -143,10 +143,11 @@ Upload a Linux `auth.log` and find password attacks hidden among thousands of no
 | **Password spraying** | One address trying 5+ real accounts, 3 or fewer guesses each | T1110.003 Password Spraying |
 | **Distributed attack** | 5+ addresses failing on the same account within 30 minutes | T1110 Brute Force |
 | **Username guessing** | 5+ attempts on accounts that don't exist (admin, test, oracle) | T1110.001 Password Guessing |
+| **Lockouts** (Windows) | 3+ accounts locked out within 30 minutes; a single lockout is a Low note | T1110 Brute Force |
 
-It reads both the classic syslog timestamps and the newer ISO style, counts "message repeated N times" lines properly, and lists every source address and account with its failed and successful logins. A few typos followed by a successful login is normal and isn't flagged. Two fictional sample logs are included: one with all five attacks, and a normal day.
+**Linux:** it reads both the classic syslog timestamps and the newer ISO style, and counts "message repeated N times" lines properly. **Windows:** it reads event IDs 4625 (failed), 4624 (successful) and 4740 (locked out), shows how each logon was attempted (RDP, network, at the keyboard), spots accounts that don't exist from the failure code, and skips Windows' own background logons. CSV column names from PowerShell and SIEMs such as Splunk (`EventCode`, `Account_Name`, `Source_Network_Address`) are recognised. It lists every source address and account with its failed and successful logins. A few typos followed by a successful login is normal and isn't flagged. Three fictional sample logs are included: a Linux attack, a normal Linux day and a Windows attack.
 
-> In progress: Windows Security events (4625, 4624, 4740), a timeline chart, threat intelligence for the attacking addresses and a case note.
+> In progress: a timeline chart, threat intelligence for the attacking addresses and a case note.
 
 ## Getting started
 
@@ -211,7 +212,7 @@ soc-toolkit/
 │   ├── display.py           shows email text safely (nothing clickable)
 │   └── config.py            loads API keys, picks private or public mode
 ├── samples/                 fictional emails and logs to try modules 2 and 3 with
-├── tests/                   73 unit tests (no API keys needed)
+├── tests/                   79 unit tests (no API keys needed)
 ├── docs/                    how it works, and screenshots
 ├── .streamlit/config.toml   5 MB upload limit
 ├── .env.example             template for your API keys

@@ -99,7 +99,7 @@ The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 73 checks (25 for Module 1, 38 for Module 2, 10 for Module 3): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 79 checks (25 for Module 1, 38 for Module 2, 16 for Module 3): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 
@@ -443,3 +443,67 @@ Turn off password logins and use SSH keys, don't allow root to log in directly, 
 
 **How does this relate to a SIEM?**
 It's the same logic as a SIEM detection rule, such as a Splunk search that counts failures by source and account over a time window, written from first principles. Building it by hand shows how the rule works and where its thresholds come from.
+
+---
+
+# How Module 3 works (part 2: Windows logs)
+
+## The big picture
+
+Windows doesn't keep a text file like `auth.log`. It records a numbered **Security event** for every logon, each with named fields. Three numbers matter here:
+
+| Event ID | Meaning | Linux equivalent |
+|---|---|---|
+| **4625** | An account failed to log on | `Failed password` |
+| **4624** | An account logged on successfully | `Accepted password` |
+| **4740** | An account was locked out | (none by default) |
+
+The fields that matter are **TargetUserName** (the account), **IpAddress** (where it came from) and **LogonType** (how they tried to get in). Once those are read, every event becomes the same kind of login event as a Linux line, so **the same five checks work on both**. That's the point of separating "parse" from "detect": a new log type only needs a new reader.
+
+## Logon types: how they tried to get in
+
+| Type | Meaning | Why it matters |
+|---|---|---|
+| 2 | At the keyboard | Someone physically at the machine |
+| 3 | Network | File shares and most remote services. Spraying often shows up here |
+| 10 | RDP (Remote Desktop) | A classic brute-force target when RDP is open to the internet |
+| 0, 4, 5 | System, batch, service | Windows' own background logons, which are skipped |
+
+## Reading the failure reason
+
+A 4625 has a **SubStatus** code that says why it failed:
+
+| Code | Meaning |
+|---|---|
+| `0xC000006A` | Right account, wrong password |
+| `0xC0000064` | The account doesn't exist, so it counts as **username guessing** |
+| `0xC0000234` | The account is locked |
+
+## Skipping the noise
+
+A Windows server logs on to itself all day long. These are skipped, or they'd hide the real logons:
+- the **SYSTEM**, **LOCAL SERVICE** and **NETWORK SERVICE** accounts
+- computer accounts, which end in **$** (`FS01$`)
+- desktop window manager sessions (`DWM-1`, `UMFD-0`)
+- logon types **0, 4 and 5** (system, batch, service)
+
+## Lockouts
+
+One lockout (4740) is usually someone forgetting a recently changed password, so it's noted as **Low**. **Three or more accounts locked within 30 minutes** is a different story: that's what a spraying or brute-force attack looks like from the defender's side, so it's **High**. The 4740 event also names the **caller computer**, the machine the bad attempts came from, which is often the fastest way to find the attacker's foothold.
+
+## Getting the log out
+
+- **Event Viewer:** Windows Logs, then Security, then **Filter Current Log** with `4624,4625,4740`, then **Save Filtered Log File As**, choosing **XML**. The `.evtx` format is binary and isn't read here; XML is the same data in text form.
+- **A SIEM export:** CSV from Splunk or similar. Different tools name the same field differently (`EventCode` or `EventID`, `Account_Name` or `TargetUserName`, `Source_Network_Address` or `IpAddress`), so the reader recognises the common names.
+- **Encoding:** Windows tools often save in UTF-16, which looks like gibberish if read as normal text, so the file's first bytes are checked first.
+
+## Questions an interviewer might ask
+
+**Which Windows event IDs would you watch for brute force?**
+4625 for failures, 4624 for successes (especially logon type 10 from outside the network), and 4740 for lockouts. On a domain controller, 4771 (Kerberos pre-authentication failed) and 4776 (NTLM credential validation) show the same attacks against domain accounts.
+
+**What does a 4625 with SubStatus 0xC0000064 tell you?**
+The account name doesn't exist, so the attacker is guessing usernames, not just passwords.
+
+**Several accounts were locked out at once. What do you check?**
+The caller computer in the 4740 events, the 4625s from that source in the minutes before, and whether any 4624 from the same source succeeded. If one did, that account may be compromised.

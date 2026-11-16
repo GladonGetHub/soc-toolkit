@@ -6,8 +6,8 @@ password spraying, distributed attacks, username guessing and, most
 importantly, a successful login after many failures.
 
 Part 1: Linux auth.log (SSH).
-Coming next: Windows Security events, a timeline chart, threat intelligence
-and a case note.
+Part 2: Windows Security events, from Event Viewer (XML) or a CSV.
+Coming next: a timeline chart, threat intelligence and a case note.
 """
 
 from datetime import datetime
@@ -25,15 +25,27 @@ st.write(
     "brute force, password spraying, distributed attacks, username guessing, and logins that worked after many failures."
 )
 
-with st.expander("How do I get a Linux login log?"):
-    st.markdown(
-        "SSH logins are recorded in **/var/log/auth.log** on Ubuntu and Debian "
-        "(**/var/log/secure** on Red Hat and CentOS). Copy it somewhere you can upload from:\n"
-        "```bash\nsudo cp /var/log/auth.log ~/auth.log && sudo chown $USER ~/auth.log\n```\n"
-        "On systems that use the journal instead:\n"
-        "```bash\njournalctl -u ssh --since today > ~/ssh.log\n```\n"
-        "Windows Security logs are coming in the next update."
-    )
+with st.expander("How do I get a login log?"):
+    linux, windows = st.tabs(["Linux", "Windows"])
+    with linux:
+        st.markdown(
+            "SSH logins are recorded in **/var/log/auth.log** on Ubuntu and Debian "
+            "(**/var/log/secure** on Red Hat and CentOS). Copy it somewhere you can upload from:\n"
+            "```bash\nsudo cp /var/log/auth.log ~/auth.log && sudo chown $USER ~/auth.log\n```\n"
+            "On systems that use the journal instead:\n"
+            "```bash\njournalctl -u ssh --since today > ~/ssh.log\n```"
+        )
+    with windows:
+        st.markdown(
+            "**From Event Viewer (no extra tools):**\n"
+            "1. Open **Event Viewer**, then **Windows Logs**, then **Security**.\n"
+            "2. Click **Filter Current Log** and type `4624,4625,4740` in the Event IDs box.\n"
+            "3. Click **Save Filtered Log File As**, and choose **XML** as the file type.\n\n"
+            "**From a SIEM such as Splunk:** export the search results as CSV. Common field names are "
+            "recognised, such as `EventCode`, `Account_Name`, `Source_Network_Address` and `Logon_Type`.\n\n"
+            "Event IDs read: **4625** failed logon, **4624** successful logon, **4740** account locked out. "
+            "Windows' own background logons (SYSTEM, computer accounts, services) are skipped."
+        )
 
 if is_public():
     st.info(
@@ -42,7 +54,8 @@ if is_public():
     )
 
 SAMPLES = Path(__file__).parent.parent / "samples" / "logs"
-EXAMPLES = {"attack": "linux_auth_attack.log", "normal": "linux_auth_normal.log"}
+EXAMPLES = {"attack": "linux_auth_attack.log", "normal": "linux_auth_normal.log",
+            "Windows": "windows_security_attack.xml"}
 
 
 def load_sample(name):
@@ -53,7 +66,8 @@ def load_sample(name):
 
 tab_upload, tab_paste = st.tabs(["Upload log file", "Paste log lines"])
 with tab_upload:
-    upload = st.file_uploader("Log file (up to 5 MB, about 50,000 lines)", type=["log", "txt"],
+    upload = st.file_uploader("Log file (up to 5 MB): Linux auth.log, or Windows events as XML or CSV",
+                              type=["log", "txt", "xml", "csv"],
                               key=f"log_upload_{st.session_state.get('log_upload_n', 0)}")
     st.caption("If a file is uploaded, it's analysed instead of anything pasted.")
 with tab_paste:
@@ -62,13 +76,14 @@ with tab_paste:
 if "log_year" not in st.session_state:
     st.session_state["log_year"] = datetime.now().year
 year = st.number_input("Year the log is from", min_value=2000, max_value=2100, step=1, key="log_year",
-                       help="Classic auth.log lines don't include the year (\"Nov 16 09:14:02\"), so it's needed "
-                            "to put events on a timeline.")
+                       help="Only needed for Linux logs: classic auth.log lines don't include the year "
+                            "(\"Nov 16 09:14:02\"). Windows events always carry the full date.")
 
-c1, c2, c3 = st.columns([1, 2, 2])
+c1, c2, c3, c4 = st.columns([1, 2, 2, 2])
 run = c1.button("Analyse", type="primary")
-c2.button("Load sample attack log", on_click=load_sample, args=("attack",))
-c3.button("Load sample normal day", on_click=load_sample, args=("normal",))
+c2.button("Sample Linux attack", on_click=load_sample, args=("attack",))
+c3.button("Sample Linux normal day", on_click=load_sample, args=("normal",))
+c4.button("Sample Windows attack", on_click=load_sample, args=("Windows",))
 
 if run:
     raw = upload.getvalue() if upload is not None else st.session_state.get("log_text", "").encode()
@@ -78,10 +93,16 @@ if run:
     if len(raw) > logs.MAX_LOG_BYTES:
         st.error("That log is larger than 5 MB. Split it into smaller files, for example one per day.")
         st.stop()
-    report = logs.parse_linux_auth(raw.decode("utf-8", errors="replace"), year=int(year))
-    if not report.events:
-        st.warning("No SSH login lines were found. This part reads Linux auth.log files: lines like "
-                   "\"sshd[1234]: Failed password for root from 203.0.113.5\". Windows logs are coming next.")
+    try:
+        report = logs.parse_log(raw, year=int(year))
+    except Exception:
+        st.error("That file couldn't be read. If it's a Windows XML export, check it was saved from Event "
+                 "Viewer as XML and not as .evtx.")
+        st.stop()
+    if not report.events and not report.lockouts:
+        st.warning("No login events were found. The Log Parser reads Linux auth.log files (lines like "
+                   "\"sshd[1234]: Failed password for root from 203.0.113.5\") and Windows Security events "
+                   "4624, 4625 and 4740 as XML or CSV. See \"How do I get a login log?\" above.")
         st.stop()
     st.session_state["log_report"] = report
 
@@ -93,14 +114,19 @@ if r:
             "Medium": "🟡 Suspicious activity found", None: "🟢 No attack patterns found"}
     st.subheader(f"{HEAD[worst]} ({len(r.findings)} finding{'s' if len(r.findings) != 1 else ''})")
 
-    m = st.columns(5)
+    m = st.columns(6 if r.lockouts else 5)
     m[0].metric("Login events", f"{len(r.events):,}")
     m[1].metric("Failed", f"{len(r.fails):,}")
     m[2].metric("Successful", f"{len(r.successes):,}")
     m[3].metric("Source addresses", len({e.ip for e in r.events}))
     m[4].metric("Accounts", len({e.user for e in r.events}))
-    st.caption(f"{r.log_type}: {r.total_lines:,} lines read, from {r.start:%d %b %Y %H:%M} to "
-               f"{r.end:%d %b %Y %H:%M}. Lines that aren't login attempts (cron jobs, sessions closing) are skipped.")
+    if r.lockouts:
+        m[5].metric("Lockouts", len(r.lockouts))
+    unit = "events" if r.log_type.startswith("Windows") else "lines"
+    skipped = ("Windows' own background logons (SYSTEM, computer accounts, services) are skipped."
+               if unit == "events" else "Lines that aren't login attempts (cron jobs, sessions closing) are skipped.")
+    st.caption(f"{r.log_type}: {r.total_lines:,} {unit} read, from {r.start:%d %b %Y %H:%M} to "
+               f"{r.end:%d %b %Y %H:%M}. {skipped}")
 
     # ------------------------------------------------------------ findings
     st.markdown("#### Findings")
@@ -146,14 +172,16 @@ if r:
             f"{int(logs.DISTRIBUTED_WINDOW.total_seconds() // 60)} minutes\n"
             f"- **Username guessing:** {logs.INVALID_USER_ATTEMPTS}+ attempts on accounts that don't exist\n"
             f"- **Success after failures:** a login that works within "
-            f"{int(logs.SUCCESS_LOOKBACK.total_seconds() // 60)} minutes of {logs.SUCCESS_AFTER_FAILS}+ failures"
+            f"{int(logs.SUCCESS_LOOKBACK.total_seconds() // 60)} minutes of {logs.SUCCESS_AFTER_FAILS}+ failures\n"
+            f"- **Lockouts (Windows):** {logs.LOCKOUT_ACCOUNTS}+ accounts locked out within "
+            f"{int(logs.LOCKOUT_WINDOW.total_seconds() // 60)} minutes; a single lockout is noted as Low"
         )
 
     with st.expander(f"All login events ({len(r.events):,})"):
         st.dataframe([{
             "Time": f"{e.time:%d %b %H:%M:%S}", "Result": "✅ Success" if e.outcome == "success" else "❌ Failed",
             "Account": e.user + (" (doesn't exist)" if e.invalid_user else ""), "From": e.ip,
-            "Method": e.method, "Server": e.host, "Line": e.line_no,
+            "Method": e.method, "Server": e.host, ("Line" if unit == "lines" else "Event"): e.line_no,
         } for e in r.events[:5000]], hide_index=True)
         if len(r.events) > 5000:
             st.caption("Showing the first 5,000 events.")
