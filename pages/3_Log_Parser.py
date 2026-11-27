@@ -8,7 +8,7 @@ importantly, a successful login after many failures.
 Part 1: Linux auth.log (SSH).
 Part 2: Windows Security events, from Event Viewer (XML) or a CSV.
 Part 3: a timeline chart, where attacks show up as spikes.
-Coming next: threat intelligence and a case note.
+Part 4: threat intelligence for the attacking addresses, and a case note.
 """
 
 from datetime import datetime
@@ -19,6 +19,9 @@ import streamlit as st
 from soc_toolkit import logs
 from soc_toolkit.config import is_public
 from soc_toolkit.display import safe_text
+from soc_toolkit.ioc import defang
+from soc_toolkit.log_intel import build_log_case_note, collect_log_iocs, intel_to_findings
+from soc_toolkit.lookup import flagged_by, run_lookups, top_finding, within_public_limits
 
 st.title("📜 Log Parser")
 st.write(
@@ -106,14 +109,23 @@ if run:
                    "4624, 4625 and 4740 as XML or CSV. See \"How do I get a login log?\" above.")
         st.stop()
     st.session_state["log_report"] = report
+    st.session_state["log_report_n"] = st.session_state.get("log_report_n", 0) + 1
 
 r = st.session_state.get("log_report")
 if r:
+    # Threat-intel results belong to the log they were run for
+    intel = st.session_state.get("log_intel")
+    if intel and intel["report_n"] != st.session_state.get("log_report_n"):
+        intel = None
+    findings = sorted(r.findings + (intel["findings"] if intel else []),
+                      key=lambda f: (logs.SEVERITY_ORDER[f.severity], -(f.count or 0)))
+
     st.divider()
-    worst = r.findings[0].severity if r.findings else None
+    worst = findings[0].severity if findings else None
     HEAD = {"Critical": "🔴 Likely compromise", "High": "🟠 Attack activity found",
-            "Medium": "🟡 Suspicious activity found", None: "🟢 No attack patterns found"}
-    st.subheader(f"{HEAD[worst]} ({len(r.findings)} finding{'s' if len(r.findings) != 1 else ''})")
+            "Medium": "🟡 Suspicious activity found", "Low": "⚪ Minor activity found",
+            None: "🟢 No attack patterns found"}
+    st.subheader(f"{HEAD[worst]} ({len(findings)} finding{'s' if len(findings) != 1 else ''})")
 
     m = st.columns(6 if r.lockouts else 5)
     m[0].metric("Login events", f"{len(r.events):,}")
@@ -129,16 +141,67 @@ if r:
     st.caption(f"{r.log_type}: {r.total_lines:,} {unit} read, from {r.start:%d %b %Y %H:%M} to "
                f"{r.end:%d %b %Y %H:%M}. {skipped}")
 
+    # ------------------------------------------------- threat intelligence
+    ROW_ICON = {"Malicious": "🔴", "Suspicious": "🟠", "Clean": "🟢", "Unknown": "⚪", "Internal": "🔵"}
+    with st.container(border=True):
+        st.markdown("#### 🔎 Threat intelligence")
+        iocs, skipped_iocs = collect_log_iocs(r)
+        if intel:
+            st.dataframe([{
+                "Address": defang(row["value"]),
+                "In this log": row["role"],
+                "Verdict": f"{ROW_ICON.get(row['verdict'], '⚪')} {row['verdict']}",
+                "Flagged by": flagged_by(row["results"]),
+                "Top finding": top_finding(row["results"]) or "No source had any data",
+            } for row in intel["rows"]], hide_index=True)
+            st.caption("Known-bad addresses are added to the findings below. Open IOC Enrichment for each "
+                       "source's full answer.")
+        elif iocs:
+            n = len(iocs)
+            st.write(f"Check {n} internet address{'es' if n > 1 else ''} from this log against the threat-intel "
+                     "sources used by IOC Enrichment, to see if they're known attackers.")
+            st.caption("Only the addresses are sent, never the log. "
+                       + ("In the public version, add your own keys in the IOC Enrichment sidebar for more sources."
+                          if is_public() else ""))
+            if st.button("Check with threat intelligence", type="primary", key="log_intel_button"):
+                to_check = within_public_limits([(v, t) for v, t, _ in iocs])
+                if to_check is not None:
+                    rows_found = run_lookups(to_check)
+                    roles = {v: role for v, _, role in iocs}
+                    for row in rows_found:
+                        row["role"] = roles[row["value"]]
+                    st.session_state["log_intel"] = {"report_n": st.session_state.get("log_report_n"),
+                                                     "rows": rows_found, "findings": intel_to_findings(rows_found)}
+                    st.rerun()
+        else:
+            st.write("No internet addresses in this log to look up.")
+        if skipped_iocs:
+            with st.expander(f"Not checked ({len(skipped_iocs)})"):
+                for item in skipped_iocs:
+                    st.markdown(f"- {safe_text(item)}")
+
+    # ------------------------------------------------------------ case note
+    case_note = build_log_case_note(r, findings, intel["rows"] if intel else None)
+    with st.expander("📝 Case note for your ticket"):
+        st.caption("Verdict, recommended actions, findings with MITRE ATT&CK, the addresses involved and the "
+                   "threat-intel results. Internet addresses are defanged. Copy it with the icon at the top right "
+                   "of the box, or download it. "
+                   + ("" if intel else "Run the threat intelligence check first to include its results."))
+        st.code(case_note, language=None, wrap_lines=True)
+        st.download_button("Download case note (.txt)", case_note, file_name="login_log_case_note.txt",
+                           mime="text/plain")
+
     # ------------------------------------------------------------ findings
     st.markdown("#### Findings")
     ICON = {"Critical": "🔴", "High": "🟠", "Medium": "🟡", "Low": "⚪"}
-    if not r.findings:
+    if not findings:
         st.write("Nothing crossed the detection thresholds. A few failed logins followed by a success is normal: "
                  "people mistype passwords.")
-    for f in r.findings:
+    for f in findings:
         with st.container(border=True):
             st.markdown(f"{ICON[f.severity]} **{f.severity}: {safe_text(f.title)}**  \n{safe_text(f.why)}")
-            st.caption(f"MITRE ATT&CK {f.technique}: {f.technique_name}")
+            st.caption(f"MITRE ATT&CK {f.technique}: {f.technique_name}" if f.technique
+                       else "From threat intelligence")
 
     # ------------------------------------------------------------ timeline
     st.markdown("#### Timeline")

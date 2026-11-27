@@ -99,7 +99,7 @@ The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 85 checks (25 for Module 1, 38 for Module 2, 22 for Module 3): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 90 checks (25 for Module 1, 38 for Module 2, 27 for Module 3): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 
@@ -530,3 +530,52 @@ Widen the time window: a few attempts an hour from one address won't trip a 10-m
 
 **Why mark the success after the failures rather than every success?**
 Most successful logins are normal. The one that comes straight after a burst of failures from the same place is the one that matters.
+
+---
+
+# How Module 3 works (part 4: threat intelligence and the case note)
+
+## Asking the rest of the internet
+
+The log shows what an address did to **your** server. Threat intelligence shows whether the rest of the internet has seen it doing the same elsewhere. An address reported thousands of times for SSH attacks is a scanner or botnet. An address no source has heard of might be an employee who forgot their password. That difference changes how fast you act.
+
+`soc_toolkit/log_intel.py` picks the addresses to check:
+1. Addresses named in a finding come first, worst finding first.
+2. Then the busiest other addresses with failed logins, up to 10 in all.
+3. **Internal** addresses (10.x, 192.168.x and so on) are never sent out, because they'd reveal your network and outside services know nothing about them.
+4. **Documentation** addresses (192.0.2.x, 198.51.100.x, 203.0.113.x) are skipped, because they only appear in examples.
+5. **Computer names**, such as the caller computer in a Windows lockout, aren't IP addresses, so they're left out.
+
+The lookups use the same shared code as Modules 1 and 2 (`lookup.py`): the same caching, public limits and VirusTotal pacing. A **Malicious** result becomes a **High** finding and a **Suspicious** one a **Medium** finding, each carrying the source's own evidence.
+
+## The case note
+
+A plain-text write-up for the ticket:
+
+| Section | What it holds |
+|---|---|
+| Verdict | The worst severity found, and how many findings |
+| Recommended action | Steps matched to the verdict (below) |
+| Log | Type, period covered, login counts and server names |
+| Findings | Each with its severity, MITRE ATT&CK technique and reason |
+| Addresses | Failed and successful logins, accounts tried, first and last seen |
+| Threat intelligence | Each address's verdict and top finding |
+| Analyst notes | A blank space for your own notes |
+
+**Internet addresses are defanged** (`185[.]220[.]101[.]55`), so a ticketing system can't turn them into links. **Internal addresses stay as they are**, because you'll want to search for them in your own tools.
+
+## The recommended actions
+
+For a **likely compromise** (a login that worked after an attack), the steps follow standard incident response:
+1. **Contain:** reset or disable the account, end its sessions and block the address.
+2. **Investigate:** find out what happened after the login. On Linux: shell history, new users, new SSH keys, cron jobs and outbound connections. On Windows: new local admins, services, scheduled tasks and RDP sessions.
+3. **Scope:** search other servers' logs for the same address and account.
+4. **Harden:** SSH keys instead of passwords, no direct root or Administrator login, MFA, and RDP only through a VPN.
+
+## Questions an interviewer might ask
+
+**An address has 500 failed logins but threat intel has never heard of it. What does that tell you?**
+Either it's new (attackers rotate addresses constantly) or it's targeted rather than a mass scanner. Unknown doesn't mean safe; the behaviour in your own log is the stronger evidence.
+
+**Why not send every address in the log to VirusTotal?**
+Free quotas are small, internal addresses would leak your network layout, and most addresses in a log are normal users. Checking the ones involved in findings first gives the most value per lookup.

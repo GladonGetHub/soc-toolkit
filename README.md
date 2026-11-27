@@ -14,8 +14,8 @@ A set of small tools that take repetitive work off a SOC analyst, built as one S
 |---|---|---|---|
 | 1 | IOC Enrichment | Check IPs, domains, URLs and file hashes against 9 threat-intel sources in one go | ✅ Ready |
 | 2 | Phishing Email Analyser | Check an email's sender, links and attachments for phishing | ✅ Ready |
-| 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | 🔨 In progress (Linux, Windows and timeline done) |
-| 4 | Threat Feed Aggregator | Merge free threat feeds into one Splunk lookup | Planned |
+| 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | ✅ Ready |
+| 4 | Threat Feed Aggregator | Merge free threat feeds into one Splunk lookup | 🔜 Next |
 | 5 | Alert Triage Assistant | Enrich a SIEM alert and draft the case note | Planned |
 | 6 | Shift Handover | Open incidents and notes for the next shift | Planned |
 | 7 | Mini SOAR | Score an alert and run the response steps | Planned |
@@ -149,7 +149,9 @@ Upload a Linux `auth.log`, or Windows Security events from Event Viewer (XML) or
 
 **Timeline:** a chart of failed logins, successful logins and lockouts over time, so each attack shows up as a spike. A dashed line marks where a login worked after an attack, and you can pick one address to see only its activity. The bar size adjusts to the log: 1 minute for a short log, up to a day for a long one.
 
-> In progress: threat intelligence for the attacking addresses, and a case note.
+**Threat intelligence:** one button checks the attacking internet addresses with Module 1's sources. A known attacker is added to the findings, with the source's own evidence, such as *"AbuseIPDB: 100% abuse confidence"*. Internal and documentation addresses are never sent out.
+
+**Case note:** a plain-text write-up for the ticket, with the verdict, recommended actions matched to the severity, every finding with its MITRE ATT&CK technique, the addresses involved and the threat-intel results. Internet addresses are defanged; internal ones stay readable.
 
 ## Getting started
 
@@ -210,11 +212,12 @@ soc-toolkit/
 │   ├── email_intel.py       checks the email's IP, domains and hashes with module 1
 │   ├── case_note.py         writes the ticket-ready case note
 │   ├── logs.py              reads login logs and detects password attacks
+│   ├── log_intel.py         threat intel and the case note for login logs
 │   ├── lookup.py            shared lookups: caching, limits and pacing
 │   ├── display.py           shows email text safely (nothing clickable)
 │   └── config.py            loads API keys, picks private or public mode
 ├── samples/                 fictional emails and logs to try modules 2 and 3 with
-├── tests/                   85 unit tests (no API keys needed)
+├── tests/                   90 unit tests (no API keys needed)
 ├── docs/                    how it works, and screenshots
 ├── .streamlit/config.toml   5 MB upload limit
 ├── .env.example             template for your API keys
