@@ -153,6 +153,36 @@ Upload a Linux `auth.log`, or Windows Security events from Event Viewer (XML) or
 
 **Case note:** a plain-text write-up for the ticket, with the verdict, recommended actions matched to the severity, every finding with its MITRE ATT&CK technique, the addresses involved and the threat-intel results. Internet addresses are defanged; internal ones stay readable.
 
+### Screenshots
+
+**58 failed guesses, then a way in.** The Linux sample log hides five attacks among normal logins. Threat intelligence confirms the address that got in is a known attacker: flagged by 3 of 4 sources, with AbuseIPDB at 100% abuse confidence.
+
+![Verdict and threat intelligence](docs/screenshots/module3/02_verdict_threat_intel.png)
+
+**Every finding has a reason and a MITRE ATT&CK technique**, from the critical successful login down to username guessing.
+
+![Findings](docs/screenshots/module3/03_findings.png)
+
+**The attack at a glance.** Each red spike is an attack: brute force at 09:15, spraying at 10:00, a distributed attack at 11:00 and username guessing at 12:10. The dashed line marks the moment the attacker got in, with the address and account.
+
+![Timeline](docs/screenshots/module3/04_timeline.png)
+
+**One address, minute by minute.** Filtered to the attacker: a steady 9 to 12 guesses a minute (a script, not a person), then a successful login at 09:19.
+
+![Timeline for the attacker](docs/screenshots/module3/05_timeline_attacker.png)
+
+**The same checks on Windows.** Event Viewer's Security events, with RDP brute force, password spraying and 4 account lockouts. The same address attacked both servers.
+
+![Windows attack](docs/screenshots/module3/07_windows_attack.png)
+
+<details>
+<summary>More screenshots: tests and case note</summary>
+
+![Tests passing](docs/screenshots/module3/01_tests_passing.png)
+![Case note](docs/screenshots/module3/06_case_note.png)
+
+</details>
+
 ## Getting started
 
 You need Python 3.10 or newer.
