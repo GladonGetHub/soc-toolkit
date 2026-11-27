@@ -99,7 +99,7 @@ The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 84 checks (25 for Module 1, 38 for Module 2, 21 for Module 3): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 85 checks (25 for Module 1, 38 for Module 2, 22 for Module 3): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 

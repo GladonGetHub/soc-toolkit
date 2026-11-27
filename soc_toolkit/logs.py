@@ -587,3 +587,20 @@ def tick_step(rows: list[dict], bucket: int) -> tuple[str, int]:
     if step < 1440:
         return "hour", step // 60
     return "day", step // 1440
+
+
+def tick_times(rows: list[dict], bucket: int) -> list[datetime]:
+    """The exact times to label under the chart: every tick_step(), from the first bar to the last."""
+    if not rows:
+        return []
+    unit, step = tick_step(rows, bucket)
+    minutes = step * {"minute": 1, "hour": 60, "day": 1440}[unit]
+    first, last = rows[0]["time"], rows[-1]["time"]
+    t = _floor(first, minutes) if minutes < 1440 else first.replace(hour=0, minute=0)
+    if t < first:
+        t += timedelta(minutes=minutes)
+    ticks = []
+    while t <= last + timedelta(minutes=bucket):
+        ticks.append(t)
+        t += timedelta(minutes=minutes)
+    return ticks

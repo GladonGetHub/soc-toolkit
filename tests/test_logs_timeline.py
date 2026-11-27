@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from soc_toolkit.logs import bucket_size, parse_log, tick_step, timeline
+from soc_toolkit.logs import bucket_size, parse_log, tick_step, tick_times, timeline
 
 SAMPLES = Path(__file__).parent.parent / "samples" / "logs"
 T = datetime(2026, 11, 16, 9, 0)
@@ -48,3 +48,13 @@ def test_time_labels_never_repeat():
     assert size == 1 and tick_step(rows, size) == ("minute", 1)
     size, rows = timeline(r)                              # a whole working day
     assert tick_step(rows, size) == ("hour", 1)
+
+
+def test_tick_times_are_whole_minutes_and_hours():
+    r = parse_log((SAMPLES / "linux_auth_attack.log").read_bytes(), year=2026)
+    size, rows = timeline(r, ip="185.220.101.55")
+    ticks = tick_times(rows, size)
+    assert [t.strftime("%H:%M") for t in ticks][:3] == ["09:14", "09:15", "09:16"]
+    assert len({t.strftime("%H:%M") for t in ticks}) == len(ticks)       # no repeats
+    size, rows = timeline(r)
+    assert all(t.minute == 0 for t in tick_times(rows, size))           # on the hour

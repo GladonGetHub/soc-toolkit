@@ -1,3 +1,3 @@
 """SOC Toolkit: small tools that take repetitive work off a SOC analyst."""
 
-__version__ = "0.11.2"
+__version__ = "0.11.3"

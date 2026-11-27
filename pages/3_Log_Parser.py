@@ -155,7 +155,7 @@ if r:
              if f.severity == "Critical" and f.last and (ip is None or ip in f.ips)]
     span_days = (rows[-1]["time"] - rows[0]["time"]).days if rows else 0
     axis_format = "%d %b" if size >= 1440 else "%d %b %H:%M" if span_days >= 1 else "%H:%M"
-    tick_unit, tick_every = logs.tick_step(rows, size) if rows else ("minute", 1)
+    ticks = logs.tick_times(rows, size)
     try:
         import altair as alt
         import pandas as pd
@@ -164,9 +164,10 @@ if r:
                              for row in rows for k in shown if row[k]])
         bar_width = max(2, min(18, 700 // max(len(rows), 1)))
         chart = alt.Chart(data).mark_bar(size=bar_width).encode(
-            x=alt.X("Time:T", title=None, axis=alt.Axis(
-                format=axis_format, labelAngle=0,
-                tickCount={"interval": tick_unit, "step": tick_every})),
+            # Label exact whole minutes or hours, so a label never repeats (09:14, 09:14...)
+            x=alt.X("Time:T", title=None, axis=alt.Axis(format=axis_format, labelAngle=0, values=[
+                alt.DateTime(year=t.year, month=t.month, date=t.day, hours=t.hour, minutes=t.minute)
+                for t in ticks])),
             y=alt.Y("Logins:Q", title=f"Logins per {size} min" if size < 60 else f"Logins per {size // 60} h"),
             color=alt.Color("Result:N", title=None, legend=alt.Legend(orient="top"),
                             scale=alt.Scale(domain=shown, range=[SERIES[k] for k in shown])),
