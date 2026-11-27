@@ -569,3 +569,21 @@ def timeline(report: LogReport, ip: str | None = None) -> tuple[int, list[dict]]
         rows.append({"time": t, **counts[t]})
         t += timedelta(minutes=size)
     return size, rows
+
+
+TICK_CHOICES = [1, 2, 5, 10, 15, 30, 60, 120, 180, 360, 720, 1440, 2880, 10080]
+
+
+def tick_step(rows: list[dict], bucket: int) -> tuple[str, int]:
+    """
+    How far apart the time labels under the chart should be, as (unit, step),
+    e.g. ("minute", 15). About 10 labels, always on whole minutes, hours or
+    days, so a label never repeats (09:14, 09:14, 09:14...).
+    """
+    span = (rows[-1]["time"] - rows[0]["time"]).total_seconds() / 60 if len(rows) > 1 else bucket
+    step = next((t for t in TICK_CHOICES if t >= max(span / 10, bucket)), TICK_CHOICES[-1])
+    if step < 60:
+        return "minute", step
+    if step < 1440:
+        return "hour", step // 60
+    return "day", step // 1440

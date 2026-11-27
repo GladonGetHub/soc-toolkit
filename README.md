@@ -214,7 +214,7 @@ soc-toolkit/
 │   ├── display.py           shows email text safely (nothing clickable)
 │   └── config.py            loads API keys, picks private or public mode
 ├── samples/                 fictional emails and logs to try modules 2 and 3 with
-├── tests/                   83 unit tests (no API keys needed)
+├── tests/                   84 unit tests (no API keys needed)
 ├── docs/                    how it works, and screenshots
 ├── .streamlit/config.toml   5 MB upload limit
 ├── .env.example             template for your API keys

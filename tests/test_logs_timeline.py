@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from soc_toolkit.logs import bucket_size, parse_log, timeline
+from soc_toolkit.logs import bucket_size, parse_log, tick_step, timeline
 
 SAMPLES = Path(__file__).parent.parent / "samples" / "logs"
 T = datetime(2026, 11, 16, 9, 0)
@@ -40,3 +40,11 @@ def test_one_address_and_lockouts():
     assert sum(row["Locked out"] for row in rows) == 4
     _, rdp = timeline(r, ip="185.220.101.55")
     assert sum(row["Failed"] for row in rdp) == 46 and sum(row["Successful"] for row in rdp) == 1
+
+
+def test_time_labels_never_repeat():
+    r = parse_log((SAMPLES / "linux_auth_attack.log").read_bytes(), year=2026)
+    size, rows = timeline(r, ip="185.220.101.55")        # about 6 minutes of 1-minute bars
+    assert size == 1 and tick_step(rows, size) == ("minute", 1)
+    size, rows = timeline(r)                              # a whole working day
+    assert tick_step(rows, size) == ("hour", 1)

@@ -150,10 +150,12 @@ if r:
     SERIES = {"Failed": "#d62728", "Successful": "#2ca02c", "Locked out": "#ff7f0e"}
     shown = [k for k in SERIES if any(row[k] for row in rows)]
     # The dashed lines: where a login worked after an attack
-    marks = [{"Time": f.last, "Finding": f.title} for f in r.findings
+    marks = [{"Time": f.last, "Finding": f.title, "Address": f.ips[0] if f.ips else "",
+              "Account": ", ".join(f.users[:3])} for f in r.findings
              if f.severity == "Critical" and f.last and (ip is None or ip in f.ips)]
     span_days = (rows[-1]["time"] - rows[0]["time"]).days if rows else 0
     axis_format = "%d %b" if size >= 1440 else "%d %b %H:%M" if span_days >= 1 else "%H:%M"
+    tick_unit, tick_every = logs.tick_step(rows, size) if rows else ("minute", 1)
     try:
         import altair as alt
         import pandas as pd
@@ -162,7 +164,9 @@ if r:
                              for row in rows for k in shown if row[k]])
         bar_width = max(2, min(18, 700 // max(len(rows), 1)))
         chart = alt.Chart(data).mark_bar(size=bar_width).encode(
-            x=alt.X("Time:T", title=None, axis=alt.Axis(format=axis_format, labelAngle=0)),
+            x=alt.X("Time:T", title=None, axis=alt.Axis(
+                format=axis_format, labelAngle=0,
+                tickCount={"interval": tick_unit, "step": tick_every})),
             y=alt.Y("Logins:Q", title=f"Logins per {size} min" if size < 60 else f"Logins per {size // 60} h"),
             color=alt.Color("Result:N", title=None, legend=alt.Legend(orient="top"),
                             scale=alt.Scale(domain=shown, range=[SERIES[k] for k in shown])),
@@ -171,7 +175,9 @@ if r:
         )
         if marks:
             rules = alt.Chart(pd.DataFrame(marks)).mark_rule(color="#7f1d1d", strokeDash=[5, 3], size=2).encode(
-                x="Time:T", tooltip=["Finding:N", alt.Tooltip("Time:T", format="%d %b %H:%M:%S")])
+                x="Time:T", tooltip=["Finding:N", alt.Tooltip("Address:N", title="Got in from"),
+                                     alt.Tooltip("Account:N", title="Account"),
+                                     alt.Tooltip("Time:T", format="%d %b %H:%M:%S")])
             chart = chart + rules
         st.altair_chart(chart.properties(height=280))
     except Exception:
