@@ -7,7 +7,8 @@ importantly, a successful login after many failures.
 
 Part 1: Linux auth.log (SSH).
 Part 2: Windows Security events, from Event Viewer (XML) or a CSV.
-Coming next: a timeline chart, threat intelligence and a case note.
+Part 3: a timeline chart, where attacks show up as spikes.
+Coming next: threat intelligence and a case note.
 """
 
 from datetime import datetime
@@ -138,6 +139,49 @@ if r:
         with st.container(border=True):
             st.markdown(f"{ICON[f.severity]} **{f.severity}: {safe_text(f.title)}**  \n{safe_text(f.why)}")
             st.caption(f"MITRE ATT&CK {f.technique}: {f.technique_name}")
+
+    # ------------------------------------------------------------ timeline
+    st.markdown("#### Timeline")
+    top_ips = [row["ip"] for row in logs.ip_summary(r)][:10]
+    choice = st.selectbox("Show logins from", ["All addresses"] + top_ips, key="timeline_ip",
+                          help="Pick one address to see only its activity. The 10 busiest addresses are listed.")
+    ip = None if choice == "All addresses" else choice
+    size, rows = logs.timeline(r, ip)
+    SERIES = {"Failed": "#d62728", "Successful": "#2ca02c", "Locked out": "#ff7f0e"}
+    shown = [k for k in SERIES if any(row[k] for row in rows)]
+    # The dashed lines: where a login worked after an attack
+    marks = [{"Time": f.last, "Finding": f.title} for f in r.findings
+             if f.severity == "Critical" and f.last and (ip is None or ip in f.ips)]
+    span_days = (rows[-1]["time"] - rows[0]["time"]).days if rows else 0
+    axis_format = "%d %b" if size >= 1440 else "%d %b %H:%M" if span_days >= 1 else "%H:%M"
+    try:
+        import altair as alt
+        import pandas as pd
+
+        data = pd.DataFrame([{"Time": row["time"], "Result": k, "Logins": row[k]}
+                             for row in rows for k in shown if row[k]])
+        bar_width = max(2, min(18, 700 // max(len(rows), 1)))
+        chart = alt.Chart(data).mark_bar(size=bar_width).encode(
+            x=alt.X("Time:T", title=None, axis=alt.Axis(format=axis_format, labelAngle=0)),
+            y=alt.Y("Logins:Q", title=f"Logins per {size} min" if size < 60 else f"Logins per {size // 60} h"),
+            color=alt.Color("Result:N", title=None, legend=alt.Legend(orient="top"),
+                            scale=alt.Scale(domain=shown, range=[SERIES[k] for k in shown])),
+            order=alt.Order("Result:N"),
+            tooltip=[alt.Tooltip("Time:T", format="%d %b %H:%M"), "Result:N", "Logins:Q"],
+        )
+        if marks:
+            rules = alt.Chart(pd.DataFrame(marks)).mark_rule(color="#7f1d1d", strokeDash=[5, 3], size=2).encode(
+                x="Time:T", tooltip=["Finding:N", alt.Tooltip("Time:T", format="%d %b %H:%M:%S")])
+            chart = chart + rules
+        st.altair_chart(chart.properties(height=280))
+    except Exception:
+        # Plain chart if the detailed one can't be drawn
+        import pandas as pd
+        st.bar_chart(pd.DataFrame(rows).set_index("time")[shown], color=[SERIES[k] for k in shown])
+    note = f"Each bar is {size} minute{'s' if size != 1 else ''}." if size < 60 else f"Each bar is {size // 60} hour{'s' if size >= 120 else ''}."
+    if marks:
+        note += " The dashed line marks a login that worked after an attack: hover over it for details."
+    st.caption(note)
 
     # ------------------------------------------------------- summary tables
     left, right = st.columns(2)

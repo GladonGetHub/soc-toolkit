@@ -14,7 +14,7 @@ A set of small tools that take repetitive work off a SOC analyst, built as one S
 |---|---|---|---|
 | 1 | IOC Enrichment | Check IPs, domains, URLs and file hashes against 9 threat-intel sources in one go | ✅ Ready |
 | 2 | Phishing Email Analyser | Check an email's sender, links and attachments for phishing | ✅ Ready |
-| 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | 🔨 In progress (Linux and Windows done) |
+| 3 | Log Parser | Find brute-force patterns in Windows and Linux logs | 🔨 In progress (Linux, Windows and timeline done) |
 | 4 | Threat Feed Aggregator | Merge free threat feeds into one Splunk lookup | Planned |
 | 5 | Alert Triage Assistant | Enrich a SIEM alert and draft the case note | Planned |
 | 6 | Shift Handover | Open incidents and notes for the next shift | Planned |
@@ -147,7 +147,9 @@ Upload a Linux `auth.log`, or Windows Security events from Event Viewer (XML) or
 
 **Linux:** it reads both the classic syslog timestamps and the newer ISO style, and counts "message repeated N times" lines properly. **Windows:** it reads event IDs 4625 (failed), 4624 (successful) and 4740 (locked out), shows how each logon was attempted (RDP, network, at the keyboard), spots accounts that don't exist from the failure code, and skips Windows' own background logons. CSV column names from PowerShell and SIEMs such as Splunk (`EventCode`, `Account_Name`, `Source_Network_Address`) are recognised. It lists every source address and account with its failed and successful logins. A few typos followed by a successful login is normal and isn't flagged. Three fictional sample logs are included: a Linux attack, a normal Linux day and a Windows attack.
 
-> In progress: a timeline chart, threat intelligence for the attacking addresses and a case note.
+**Timeline:** a chart of failed logins, successful logins and lockouts over time, so each attack shows up as a spike. A dashed line marks where a login worked after an attack, and you can pick one address to see only its activity. The bar size adjusts to the log: 1 minute for a short log, up to a day for a long one.
+
+> In progress: threat intelligence for the attacking addresses, and a case note.
 
 ## Getting started
 
@@ -212,7 +214,7 @@ soc-toolkit/
 │   ├── display.py           shows email text safely (nothing clickable)
 │   └── config.py            loads API keys, picks private or public mode
 ├── samples/                 fictional emails and logs to try modules 2 and 3 with
-├── tests/                   79 unit tests (no API keys needed)
+├── tests/                   83 unit tests (no API keys needed)
 ├── docs/                    how it works, and screenshots
 ├── .streamlit/config.toml   5 MB upload limit
 ├── .env.example             template for your API keys

@@ -523,3 +523,49 @@ def user_summary(report: LogReport) -> list[dict]:
         r["invalid"] = r["invalid"] or e.invalid_user
     out = [{"user": u, **r, "ips": sorted(r["ips"])} for u, r in rows.items()]
     return sorted(out, key=lambda r: (-r["fails"], -r["successes"]))
+
+
+# ------------------------------------------------------------------ timeline
+# Bucket sizes to choose from, in minutes. The smallest one that gives no more
+# than MAX_BUCKETS bars is used, so a 10-minute attack and a month of logs
+# both make a readable chart.
+BUCKET_CHOICES = [1, 5, 15, 30, 60, 180, 360, 1440]
+MAX_BUCKETS = 150
+
+
+def bucket_size(start: datetime, end: datetime) -> int:
+    span = max((end - start).total_seconds() / 60, 1)
+    return next((b for b in BUCKET_CHOICES if span / b <= MAX_BUCKETS), BUCKET_CHOICES[-1])
+
+
+def _floor(t: datetime, minutes: int) -> datetime:
+    """Round a time down to the start of its bucket (e.g. 09:14 -> 09:10 for 5-minute buckets)."""
+    since_midnight = t.hour * 60 + t.minute
+    floored = since_midnight - since_midnight % minutes if minutes < 1440 else 0
+    return t.replace(hour=floored // 60, minute=floored % 60, second=0, microsecond=0)
+
+
+def timeline(report: LogReport, ip: str | None = None) -> tuple[int, list[dict]]:
+    """
+    Count failed logins, successful logins and lockouts per time bucket.
+    Returns (bucket size in minutes, rows). Empty buckets are included, so quiet
+    periods show as gaps and an attack stands out as a spike.
+    `ip` limits the chart to one source address.
+    """
+    events = [e for e in report.events if ip is None or e.ip == ip]
+    lockouts = report.lockouts if ip is None else []
+    everything = events + lockouts
+    if not everything:
+        return 1, []
+    start, end = min(e.time for e in everything), max(e.time for e in everything)
+    size = bucket_size(start, end)
+    counts = defaultdict(lambda: {"Failed": 0, "Successful": 0, "Locked out": 0})
+    for e in events:
+        counts[_floor(e.time, size)]["Failed" if e.outcome == "fail" else "Successful"] += 1
+    for e in lockouts:
+        counts[_floor(e.time, size)]["Locked out"] += 1
+    rows, t, last = [], _floor(start, size), _floor(end, size)
+    while t <= last:
+        rows.append({"time": t, **counts[t]})
+        t += timedelta(minutes=size)
+    return size, rows

@@ -99,7 +99,7 @@ The free VirusTotal key allows 4 lookups a minute, so batches bigger than 4 wait
 
 ## 6. `tests/`: proving it works
 
-`pytest` runs 79 checks (25 for Module 1, 38 for Module 2, 16 for Module 3): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
+`pytest` runs 83 checks (25 for Module 1, 38 for Module 2, 20 for Module 3): refanging, type detection, internal ranges, de-duplication, verdict thresholds, how we read each source's response, and which sources switch on in private and public mode (including that visitor keys are ignored on a private machine). The source tests use fake responses in the same format as the real APIs, so they run without keys or internet.
 
 ## Questions an interviewer might ask
 
@@ -507,3 +507,26 @@ The account name doesn't exist, so the attacker is guessing usernames, not just 
 
 **Several accounts were locked out at once. What do you check?**
 The caller computer in the 4740 events, the 4625s from that source in the minutes before, and whether any 4624 from the same source succeeded. If one did, that account may be compromised.
+
+---
+
+# How Module 3 works (part 3: the timeline)
+
+## Why a chart
+
+A table of 5,000 login events hides an attack; a chart shows it at a glance. Normal activity is a few short bars spread through the working day. A brute-force attack is a tall red spike, and a green bar straight after it is the moment the attacker got in. The chart marks that moment with a dashed line.
+
+## How it's built
+
+1. **Buckets.** Time is cut into equal slices, and each slice counts its failed logins, successful logins and (for Windows) lockouts. `logs.timeline()` does the counting.
+2. **Choosing the bucket size.** A 10-minute log needs 1-minute bars; a month of logs needs daily bars. The smallest size from 1, 5, 15, 30 or 60 minutes, or 3, 6 or 24 hours, that keeps the chart to 150 bars or fewer is picked automatically.
+3. **Empty buckets are kept.** Quiet periods show as gaps, which is what makes a burst stand out. Leaving them out would squash the timeline and hide the shape of the attack.
+4. **One address at a time.** The "Show logins from" box filters the chart to one address, to see exactly when an attacker started, paused and got in.
+
+## Questions an interviewer might ask
+
+**How would you spot a slow brute-force attack that stays under the threshold?**
+Widen the time window: a few attempts an hour from one address won't trip a 10-minute rule, but over a week it's hundreds. On a timeline it shows as a steady stripe of red rather than a spike.
+
+**Why mark the success after the failures rather than every success?**
+Most successful logins are normal. The one that comes straight after a burst of failures from the same place is the one that matters.
